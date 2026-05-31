@@ -1,0 +1,157 @@
+uses libs.utils.Constants
+uses libs.utils.DatabaseConfig
+
+const char debugMSG[] = "[@PostsRepository]"
+const int PAGINATION_SIZE = 5
+const int WRITING_CACHE_SIZE = 40
+const int CONNECTION_READ_POOL_SIZE = 90
+
+component provides repositories.posts.PostsRepository requires time.DateUtil du, time.Calendar ic, data.IntUtil iu, data.mysql.MySQL,
+libs.utils.Logger logger, libs.krabs.LatencyStore ls {
+    MySQL createNewConnection() {
+        return new MySQL(DatabaseConfig.host, DatabaseConfig.port, DatabaseConfig.user, DatabaseConfig.password, DatabaseConfig.databaseName)
+    }
+
+    void PostsRepository:addPost(store Post newPost) {
+        DateTime startExecutionTime = ic.getTime()
+        char query[] = "INSERT INTO posts (userId, content) VALUES ($(iu.makeString(newPost.userId)), '$(newPost.content)');"
+        MySQL conn = createNewConnection()
+        if(!conn.execute(query)) logger.storeError("Failed to write post in database")
+        conn.close()
+        int executionTime = ls.getMilisecondsExecutionTimeSince(startExecutionTime)
+        char logMsg[] = new char[](
+            debugMSG, " ",
+            "add posts: ",
+            iu.makeString(executionTime)
+        )
+        logger.storeInfo(logMsg)
+    }
+
+    Post PostsRepository:getPostById(store int postId) {
+        for (int i = 0; i < readingCache.arrayLength; i++) {
+            if (readingCache[i].id == postId) {
+                DateTime diff = du.diff(ic.getTime(), readingCache[i].ttl)
+                if(du.toMilliseconds(diff) < 60000) { // 1 minute
+                    return readingCache[i]    
+                } else {
+                    // Post expired, remove from cache
+                    Post newPosts[] = new Post[]()
+                    for (int j = 0; j < readingCache.arrayLength; j++) {
+                        if(readingCache[j].id != postId) {
+                            newPosts = new Post[](newPosts, readingCache[j])
+                        }
+                    }
+                    readingCache = newPosts
+                    break
+                }
+            }
+        }
+        
+        char query[] = "SELECT * FROM posts WHERE id = $(iu.makeString(postId)) LIMIT 1;"
+
+        MySQL conn = createNewConnection()
+        if(!conn.execute(query)) throw new Exception("Failed to fetch post from database")
+        MySQLRow result[] = conn.fetchAll()
+        conn.close()
+        if (result.arrayLength > 0) {
+            MySQLRow row = result[0]
+            int id
+            int userId
+            int likes
+            char content[]
+            DateTime ttl = ic.getTime()
+            for(int i = 0; i < row.fields.arrayLength; i++) {
+                if ( row.fields[i].name == "id") {
+                    id = iu.intFromString(row.fields[i].value)
+                } else if (row.fields[i].name == "userId") {
+                    userId = iu.intFromString(row.fields[i].value)
+                } else if (row.fields[i].name == "likes") {
+                    likes = iu.intFromString(row.fields[i].value)
+                } else if (row.fields[i].name == "content") {
+                    content = row.fields[i].value
+                }
+            }
+            Post post = new Post(id, userId, likes, content, ttl)
+            readingCache = new Post[](readingCache, post) // add to cache
+            return post
+        }
+        return null
+    }
+
+    Post[] PostsRepository:getPosts(store int page, store int pageSize) {
+        char query[] = "SELECT * FROM posts LIMIT $(iu.makeString(pageSize)) OFFSET $(iu.makeString(page * pageSize));"
+
+        MySQL conn = createNewConnection()
+        if(!conn.execute(query)) throw new Exception("Failed to fetch post from database")
+        MySQLRow result[] = conn.fetchAll()
+        conn.close()
+        Post allPosts[] = new Post[]()
+
+        if (result.arrayLength > 0) {
+            for(int i = 0; i < result.arrayLength; i++) {
+                MySQLRow row = result[i]
+                int id
+                int userId
+                int likes
+                char content[]
+                for(int j = 0; j < row.fields.arrayLength; j++) {
+                    if ( row.fields[j].name == "id") {
+                        id = iu.intFromString(row.fields[j].value)
+                    } else if (row.fields[j].name == "userId") {
+                        userId = iu.intFromString(row.fields[j].value)
+                    } else if (row.fields[j].name == "likes") {
+                        likes = iu.intFromString(row.fields[j].value)
+                    } else if (row.fields[j].name == "content") {
+                        content = row.fields[j].value
+                    }
+                }
+                Post post = new Post(id, userId, likes, content, null)
+                allPosts = new Post[](allPosts, post)
+            }
+        }
+        return allPosts
+    }
+
+    Post[] PostsRepository:getUserFeed(store int userId) {
+        DateTime startExecutionTime = ic.getTime()
+        char query[] = "SELECT id, userId, likes, content, created_at FROM posts WHERE userId <> $(iu.makeString(userId)) ORDER BY created_at DESC LIMIT $(iu.makeString(PAGINATION_SIZE));"
+
+        MySQL conn = createNewConnection()
+        if(!conn.execute(query)) throw new Exception("Failed to fetch post from database")
+        MySQLRow result[] = conn.fetchAll()
+        conn.close()
+        Post userPosts[] = new Post[]()
+
+        if (result.arrayLength > 0) {
+            for(int i = 0; i < result.arrayLength; i++) {
+                MySQLRow row = result[i]
+                int id
+                int likes
+                char content[]
+                for(int j = 0; j < row.fields.arrayLength; j++) {
+                    if ( row.fields[j].name == "id") {
+                        id = iu.intFromString(row.fields[j].value)
+                    } else if (row.fields[j].name == "likes") {
+                        likes = iu.intFromString(row.fields[j].value)
+                    } else if (row.fields[j].name == "content") {
+                        content = row.fields[j].value
+                    } else if (row.fields[j].name == "userId") {
+                        userId = iu.intFromString(row.fields[j].value)
+                    }
+                }
+                Post post = new Post(id, userId, likes, content, null)
+                userPosts = new Post[](userPosts, post)
+            }
+        }
+
+        int executionTime = ls.getMilisecondsExecutionTimeSince(startExecutionTime)
+        char logMsg[] = new char[](
+            debugMSG, " ",
+            "get feed: ",
+            iu.makeString(executionTime)
+        )
+        logger.storeInfo(logMsg)
+        return userPosts
+    }
+
+}

@@ -1,0 +1,81 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: k6-test-script-users
+data:
+  test.js: |
+    import { randomIntBetween } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js';
+
+    import http from 'k6/http';
+    import exec from 'k6/execution';
+    import { check, sleep, randomSeed } from 'k6';
+
+    export const options = {
+        stages: [
+          { duration: '5s', target: 2 },
+          { duration: '5s', target: 4 },
+          { duration: '5s', target: 8 },
+          { duration: '5s', target: 16 },
+          { duration: '5s', target: 32 },
+          { duration: '5s', target: 64 },
+          { duration: '5s', target: 128 },
+        ],
+    };
+
+    export default function () {
+      const apiUrl = 'http://192.168.5.20:30080/';
+      const userId = exec.vu.idInInstance;
+
+      // user creates a post
+      const randomChanceToPost = randomIntBetween(1, 100);
+      if(randomChanceToPost <= 15) { // 15% chance to create a post        
+        try {
+            const resCreatePost = http.post(
+              apiUrl + 'post',
+              JSON.stringify({'userId': userId.toString(), 'content': 'teste de post'}),
+              {
+                headers: {'Content-Type': 'application/json'},
+                tags: { name: 'CreatePost' },
+                timeout: '5s',
+              }
+            );           
+            check(resCreatePost, { 'status was 201': (r) => r.status == 201 });
+        } catch (e) {
+            console.error(`VU ${userId}: ERRO CRÍTICO dentro do IF: ` + e);
+        }
+      }
+
+      const resGetFeed = http.get(apiUrl + 'feed/' + userId.toString(), { tags: { name: 'GetFeed' }, timeout: '5s' });
+      check(resGetFeed, { 'status was 200': (r) => r.status == 200 });
+      
+      sleep(1);
+    }
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: k6-job-users
+  labels:
+    app: k6-load-tester-users
+spec:
+  template:
+    metadata:
+      labels:
+        app: k6-load-tester-users
+    spec:
+      containers:
+      - name: k6
+        image: grafana/k6:latest
+        command: ["sh", "-c", "k6 run /scripts/test.js --out csv=/results/data.csv && echo 'Teste finalizado. Dormindo...' && sleep 600"]
+        volumeMounts:
+        - name: script-volume
+          mountPath: /scripts
+        - name: results-volume
+          mountPath: /results
+      restartPolicy: Never
+      volumes:
+      - name: script-volume
+        configMap:
+          name: k6-test-script-users
+      - name: results-volume
+        emptyDir: {}

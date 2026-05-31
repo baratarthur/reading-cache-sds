@@ -1,0 +1,32 @@
+uses libs.utils.Tags
+
+component provides libs.utils.Logger requires io.Output out {
+    void Logger:info(char message[]) {
+        char completeMessage[] = new char[](Tags.info, " ", message)
+        asynch::log(completeMessage)
+    }
+
+    void Logger:storeInfo(char message[]) {
+        char completeMessage[] = new char[](Tags.storeInfo, " ", message)
+        asynch::log(completeMessage)
+    }
+
+    void Logger:warn(char message[]) {
+        char completeMessage[] = new char[](Tags.warn, " ", message)
+        asynch::log(completeMessage)
+    }
+
+    void Logger:error(char message[]) {
+        char completeMessage[] = new char[](Tags.error, " ", message)
+        asynch::log(completeMessage)
+    }
+
+    void Logger:storeError(char message[]) {
+        char completeMessage[] = new char[](Tags.storeError, " ", message)
+        asynch::log(completeMessage)
+    }
+
+    void log(char message[]) {
+        out.println(message)
+    }
+}

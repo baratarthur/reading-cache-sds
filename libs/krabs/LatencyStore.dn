@@ -1,0 +1,30 @@
+const int MAX_LATENCY_STORE_SIZE = 10
+const char APP_NAME[] = "social-media-app"
+const char HOST[] = "192.168.5.27"
+const char PORT[] = "30002"
+
+component provides libs.krabs.LatencyStore requires time.Calendar ic, time.DateUtil du,
+    net.http.HTTPRequest req, data.IntUtil iu, libs.utils.Logger logger {
+    dec latencyAvarage = 0.0
+    const dec ALPHA = 0.7
+
+    int LatencyStore:getMilisecondsExecutionTimeSince(DateTime start) {
+        DateTime now = ic.getTime()
+        return du.toMilliseconds(du.diff(now, start))
+    }
+
+    void LatencyStore:storeExecutionTime(int miliseconds) {
+        dec convertedLatency = miliseconds
+        dec historyLatency = latencyAvarage * (1.0 - ALPHA)
+        dec currentLatency = convertedLatency * ALPHA
+        latencyAvarage = historyLatency + currentLatency
+        logger.info("Checksum history: $(iu.makeString(historyLatency)) ms")
+        logger.info("Checksum current: $(iu.makeString(currentLatency)) ms")
+        logger.info("Execution time stored: $(iu.makeString(miliseconds)) ms")
+        logger.info("Latency average: $(iu.makeString(latencyAvarage)) ms")
+    }
+
+    dec LatencyStore:getCurrentAverageLatency() {
+        return latencyAvarage
+    }
+}

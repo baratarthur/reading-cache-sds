@@ -1,0 +1,9 @@
+component provides libs.adaptation.AdaptationLyfecicle {
+    bool AdaptationLyfecicle:onLoadRemoteState() {
+        return true
+    }
+
+    bool AdaptationLyfecicle:onUpdateLocalState() {
+        return true
+    }
+}

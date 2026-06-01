@@ -20,8 +20,7 @@ data LatencyCheckDTO {
 
 component provides Server(Destructor) requires net.TCPSocket, net.TCPServerSocket, libs.utils.Logger logger, data.IntUtil iu,
 composition.Adapt adapter, composition.RecursiveLoader loader, repositories.posts.PostsRepository, libs.network.http.HTTPUtil httpUtil,
-data.StringUtil su, data.json.JSONEncoder je, data.json.JSONParser jsonParser, libs.adaptation.AddressHandler ah, time.Calendar ic,
-libs.krabs.LatencyStore ls, libs.krabs.RemotesHandler {
+data.StringUtil su, data.json.JSONEncoder je, data.json.JSONParser jsonParser, time.Calendar ic, libs.krabs.LatencyStore ls, libs.krabs.RemotesHandler {
     PostsRepository repo
     LoadedComponents repoComponents[] = new LoadedComponents[](
         loader.load("repositories/posts/PostsRepository.o"),

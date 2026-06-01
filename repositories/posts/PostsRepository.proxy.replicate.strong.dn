@@ -1,7 +1,8 @@
 uses libs.utils.Constants
+uses libs.adaptation.AdaptationLyfecicle
 
 
-component provides repositories.posts.PostsRepository(AdaptEvents), libs.krabs.RemotesHandler requires time.Timer timer, libs.network.rpc.RPCUtil rpcUtil, data.json.JSONEncoder je, libs.adaptation.AddressHandler ah {
+component provides repositories.posts.PostsRepository(AdaptationLyfecicle), libs.krabs.RemotesHandler requires time.Timer timer, libs.network.rpc.RPCUtil rpcUtil, data.json.JSONEncoder je, libs.adaptation.AddressHandler ah {
 	static Address remotes[] = new Address[]()
 	
 	implementation RemotesHandler {

@@ -89,14 +89,8 @@ libs.adaptation.AdaptationLyfecicle {
         if(req.command == "GET") {
             DateTime startExecutionTime = ic.getTime()
             res = processGetRequests(req)
-            int executionTime = ls.getMilisecondsExecutionTimeSince(startExecutionTime)
-            ls.storeExecutionTime(executionTime)
-            char logMsg[] = new char[](
-                    debugMSG, " ",
-                    req.command, " ", req.resource, ": ",
-                    iu.makeString(executionTime)
-            )
-            logger.storeInfo(logMsg)
+            int executionTimeInMs = ls.getMilisecondsExecutionTimeSince(startExecutionTime)
+            ls.storeExecutionTime(executionTimeInMs, req)
         } else if (req.command == "POST") {
             res = processPostRequests(req)
         }

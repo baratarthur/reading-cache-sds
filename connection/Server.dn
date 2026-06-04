@@ -147,7 +147,7 @@ libs.adaptation.AdaptationLyfecicle {
             Address newAddress[] = je.jsonToArray(body, typeof(Address[]))
             char proxyNamespace[] = remoteNames[proxyId].string
 
-            logger.info("$debugMSG Adapted to $proxyNamespace with addresses: $body")
+            logger.storeInfo("$debugMSG Adapted, $proxyNamespace, $(iu.makeString(newAddress.arrayLength))")
 
             changeRepo(proxyId, newAddress)
 

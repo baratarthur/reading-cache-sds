@@ -1,28 +1,43 @@
 uses libs.utils.Tags
 
-component provides libs.utils.Logger requires io.Output out {
+component provides libs.utils.Logger requires io.Output out, data.IntUtil iu, time.Calendar ic, time.DateUtil du {
     void Logger:info(char message[]) {
-        char completeMessage[] = new char[](Tags.info, " ", message)
+        DateTime now = ic.getTime()
+        int timestamp = du.toMilliseconds(now)
+        char timestampStr[] = iu.makeString(timestamp)
+        char completeMessage[] = new char[]("[$timestampStr]", Tags.info, " ", message)
         asynch::log(completeMessage)
     }
 
     void Logger:storeInfo(char message[]) {
-        char completeMessage[] = new char[](Tags.storeInfo, " ", message)
+        DateTime now = ic.getTime()
+        int timestamp = du.toMilliseconds(now)
+        char timestampStr[] = iu.makeString(timestamp)
+        char completeMessage[] = new char[]("[$timestampStr]", Tags.storeInfo, " ", message)
         asynch::log(completeMessage)
     }
 
     void Logger:warn(char message[]) {
-        char completeMessage[] = new char[](Tags.warn, " ", message)
+        DateTime now = ic.getTime()
+        int timestamp = du.toMilliseconds(now)
+        char timestampStr[] = iu.makeString(timestamp)
+        char completeMessage[] = new char[]("[$timestampStr]", Tags.warn, " ", message)
         asynch::log(completeMessage)
     }
 
     void Logger:error(char message[]) {
-        char completeMessage[] = new char[](Tags.error, " ", message)
+        DateTime now = ic.getTime()
+        int timestamp = du.toMilliseconds(now)
+        char timestampStr[] = iu.makeString(timestamp)
+        char completeMessage[] = new char[]("[$timestampStr]", Tags.error, " ", message)
         asynch::log(completeMessage)
     }
 
     void Logger:storeError(char message[]) {
-        char completeMessage[] = new char[](Tags.storeError, " ", message)
+        DateTime now = ic.getTime()
+        int timestamp = du.toMilliseconds(now)
+        char timestampStr[] = iu.makeString(timestamp)
+        char completeMessage[] = new char[]("[$timestampStr]", Tags.storeError, " ", message)
         asynch::log(completeMessage)
     }
 

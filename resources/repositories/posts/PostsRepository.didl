@@ -1,19 +1,19 @@
 {
     "name": "post-repository",
     "allows": [" RS ", " RW ", " FS ", " FW "],
-    "occupation": "1%",
-    "boundaries": ["0 - 30 ms ", "*"],
     "dependencies": [
         { "lib": "time.Timer", "alias": "timer" }
     ],
     "attributes": {
-        "postsRead": { "calculateWith": "setPosts" },
-        "postsWrite": { "calculateWith": "setPosts", "skip": true }
+        "readingCache": { "onTransfer": "setPosts", "onMerge": "accumulate" }
     },
     "methods": {
         "getPosts": {
             "returnParser": "je.jsonToArray({}, typeof(Post[]))",
             "remoteReturnParser": "je.jsonFromArray({})"
+        },
+        "setPosts": {
+            "hashKey": "id"
         },
         "getPostById": {
             "returnParser": "je.jsonToData({}, typeof(Post))",

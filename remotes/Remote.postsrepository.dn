@@ -63,6 +63,11 @@ component provides remotes.Remote:postsrepository requires net.TCPSocket, net.TC
 			return connection.buildResponseWithData("getUserFeed", "200", je.jsonFromArray(result))
 		}
 
+		if(method == "clearState") {
+			remoteComponent.clearState()
+			return connection.buildResponse("clearState", "200")
+		}
+
 		return connection.buildResponse(method, "404")
 	}
 

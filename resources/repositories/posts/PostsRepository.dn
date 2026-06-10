@@ -33,16 +33,13 @@ data GetPostByIdParamsFormat {
     int postId
 }
 
-data GetPostsParamsFormat {
-    int page
-    int pageSize
-}
-
 interface PostsRepository {
     transfer Post readingCache[]
 
     void addPost(store Post newPost)
+    void setPosts(store Post posts[])
     Post getPostById(store int postId)
-    Post[] getPosts(store int page, store int pageSize)
+    Post[] getPosts()
     Post[] getUserFeed(store int userId)
+    void clearState()
 }

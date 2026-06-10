@@ -27,6 +27,14 @@ libs.utils.Logger logger, libs.krabs.LatencyStore ls {
         logger.storeInfo(logMsg)
     }
 
+    void PostsRepository:setPosts(store Post posts[]) {
+        readingCache = posts
+    }
+
+    Post[] PostsRepository:getPosts() {
+        return readingCache
+    }
+
     Post PostsRepository:getPostById(store int postId) {
         for (int i = 0; i < readingCache.arrayLength; i++) {
             if (readingCache[i].id == postId) {
@@ -78,40 +86,6 @@ libs.utils.Logger logger, libs.krabs.LatencyStore ls {
         return null
     }
 
-    Post[] PostsRepository:getPosts(store int page, store int pageSize) {
-        char query[] = "SELECT * FROM posts LIMIT $(iu.makeString(pageSize)) OFFSET $(iu.makeString(page * pageSize));"
-
-        MySQL conn = createNewConnection()
-        if(!conn.execute(query)) throw new Exception("Failed to fetch post from database")
-        MySQLRow result[] = conn.fetchAll()
-        conn.close()
-        Post allPosts[] = new Post[]()
-
-        if (result.arrayLength > 0) {
-            for(int i = 0; i < result.arrayLength; i++) {
-                MySQLRow row = result[i]
-                int id
-                int userId
-                int likes
-                char content[]
-                for(int j = 0; j < row.fields.arrayLength; j++) {
-                    if ( row.fields[j].name == "id") {
-                        id = iu.intFromString(row.fields[j].value)
-                    } else if (row.fields[j].name == "userId") {
-                        userId = iu.intFromString(row.fields[j].value)
-                    } else if (row.fields[j].name == "likes") {
-                        likes = iu.intFromString(row.fields[j].value)
-                    } else if (row.fields[j].name == "content") {
-                        content = row.fields[j].value
-                    }
-                }
-                Post post = new Post(id, userId, likes, content, null)
-                allPosts = new Post[](allPosts, post)
-            }
-        }
-        return allPosts
-    }
-
     Post[] PostsRepository:getUserFeed(store int userId) {
         DateTime startExecutionTime = ic.getTime()
         char query[] = "SELECT id, userId, likes, content, created_at FROM posts WHERE userId <> $(iu.makeString(userId)) ORDER BY created_at DESC LIMIT $(iu.makeString(PAGINATION_SIZE));"
@@ -152,6 +126,10 @@ libs.utils.Logger logger, libs.krabs.LatencyStore ls {
         )
         logger.storeInfo(logMsg)
         return userPosts
+    }
+
+    void PostsRepository:clearState() {
+        readingCache = new Post[]()
     }
 
 }

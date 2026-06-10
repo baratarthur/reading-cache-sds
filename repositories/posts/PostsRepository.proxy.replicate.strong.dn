@@ -31,6 +31,13 @@ component provides repositories.posts.PostsRepository(libs.adaptation.Adaptation
 			anycast(req)
 		}
 
+		void PostsRepository:setPosts(store Post posts[]) {
+			SetPostsParamsFormat params = new SetPostsParamsFormat(posts)
+			char requestBody[] = je.jsonFromData(params)
+			Request req = new Request(buildMetaForMethod("setPosts"), requestBody)
+			broadcast(req)
+		}
+
 		Post PostsRepository:getPostById(store int postId) {
 			GetPostByIdParamsFormat params = new GetPostByIdParamsFormat(postId)
 			char requestBody[] = je.jsonFromData(params)
@@ -39,9 +46,8 @@ component provides repositories.posts.PostsRepository(libs.adaptation.Adaptation
 			return je.jsonToData(res.content, typeof(Post))
 		}
 
-		Post[] PostsRepository:getPosts(store int page, store int pageSize) {
-			GetPostsParamsFormat params = new GetPostsParamsFormat(page, pageSize)
-			char requestBody[] = je.jsonFromData(params)
+		Post[] PostsRepository:getPosts() {
+			char requestBody[] = ""
 			Request req = new Request(buildMetaForMethod("getPosts"), requestBody)
 			Response res = anycast(req)
 			return je.jsonToArray(res.content, typeof(Post[]))
@@ -53,6 +59,26 @@ component provides repositories.posts.PostsRepository(libs.adaptation.Adaptation
 			Request req = new Request(buildMetaForMethod("getUserFeed"), requestBody)
 			Response res = anycast(req)
 			return je.jsonToArray(res.content, typeof(Post[]))
+		}
+
+		void PostsRepository:clearState() {
+			char requestBody[] = ""
+			Request req = new Request(buildMetaForMethod("clearState"), requestBody)
+			broadcast(req)
+		}
+
+		Response[] broadcastList(Request r) {
+			Response res[]
+			mutex(pointerLock) {
+				for(int i = 0; i < remotes.arrayLength; i++) {
+					RequestWrapper reqWrapper = new RequestWrapper(remotes[i], r)
+					Reponse singleRes = rpcUtil.make(reqWrapper)
+					res = new Response[](res, singleRes)
+				}
+
+			}
+
+			return res
 		}
 
 		Response broadcast(Request r) {
@@ -82,6 +108,8 @@ component provides repositories.posts.PostsRepository(libs.adaptation.Adaptation
 		}
 
 		bool AdaptationLyfecicle:onUpdateLocalState() {
+			char requestBody[] = ""
+			Request req = new Request(buildMetaForMethod("clearState"), requestBody)broadcast(req)
 			return true
 		}
 

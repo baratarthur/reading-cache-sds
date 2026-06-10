@@ -55,6 +55,25 @@ component provides repositories.posts.PostsRepository(libs.adaptation.Adaptation
 			return je.jsonToArray(res.content, typeof(Post[]))
 		}
 
+		void PostsRepository:clearState() {
+			char requestBody[] = ""
+			Request req = new Request(buildMetaForMethod("clearState"), requestBody)
+			anycast(req)
+		}
+
+		Response broadcast(Request r) {
+			Response res
+			mutex(pointerLock) {
+				for(int i = 0; i < remotes.arrayLength; i++) {
+					RequestWrapper reqWrapper = new RequestWrapper(remotes[i], r)
+					res = rpcUtil.make(reqWrapper)
+				}
+
+			}
+
+			return res
+		}
+
 		Response hashcast(Request r, int hashKey) {
 			mutex(pointerLock) {
 				int i = hashKey % remotes.arrayLength

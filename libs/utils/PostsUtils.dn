@@ -1,0 +1,5 @@
+component provides libs.utils.PostsUtils requires repositories.posts.PostsRepository {
+    Post[] PostsUtils:accumulate(Post existingPosts[], Post newPosts[]) {
+        return new Post[](existingPosts, newPosts)
+    }
+}

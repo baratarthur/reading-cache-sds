@@ -2,17 +2,20 @@
     "name": "post-repository",
     "allows": [" RS ", " RW ", " FS ", " FW "],
     "dependencies": [
-        { "lib": "time.Timer", "alias": "timer" }
+        { "lib": "time.Timer", "alias": "timer" },
+        { "lib": "libs.utils.PostsUtils", "alias": "pu" }
     ],
     "attributes": {
-        "readingCache": { "onTransfer": "setPosts", "onMerge": "accumulate" }
+        "readingCache": { "onTransfer": "setPosts", "onLoad": "getPosts" }
     },
     "methods": {
         "getPosts": {
             "returnParser": "je.jsonToArray({}, typeof(Post[]))",
-            "remoteReturnParser": "je.jsonFromArray({})"
+            "remoteReturnParser": "je.jsonFromArray({})",
+            "onMerge": "pu.accumulate"
         },
         "setPosts": {
+            "balance": "posts",
             "hashKey": "id"
         },
         "getPostById": {

@@ -104,9 +104,9 @@ libs.adaptation.AdaptationLyfecicle {
             responseContent = "Hello!"
             return build200(req, responseContent)
         } else if (req.resource == "/all") {
-            int page = httpUtil.getQueryStringValue(req.queryString, "page").string.intFromString()
-            int pageSize = httpUtil.getQueryStringValue(req.queryString, "pageSize").string.intFromString()
-            Post allPosts[] = repo.getPosts(page, pageSize)
+            // int page = httpUtil.getQueryStringValue(req.queryString, "page").string.intFromString()
+            // int pageSize = httpUtil.getQueryStringValue(req.queryString, "pageSize").string.intFromString()
+            Post allPosts[] = repo.getPosts()
             responseContent = je.jsonFromArray(allPosts)
             return build200(req, responseContent)
         } else if (su.startsWith(req.resource, "/feed/")) {
@@ -227,6 +227,7 @@ libs.adaptation.AdaptationLyfecicle {
             handler.setRemotes(remotes)
             logger.info("$debugMSG call add remotes: $( je.jsonFromArray( handler.getRemotes() ) )")
             AdaptationLyfecicle newComponentLifecycle = new AdaptationLyfecicle() from repoComponents[option].mainComponent
+            repo.clearState()
             newComponentLifecycle.onLoadRemoteState()
         }
     }

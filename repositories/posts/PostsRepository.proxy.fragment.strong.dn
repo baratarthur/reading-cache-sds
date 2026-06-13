@@ -1,7 +1,7 @@
 uses libs.utils.Constants
 
 
-component provides repositories.posts.PostsRepository(libs.adaptation.AdaptationLyfecicle), libs.krabs.RemotesHandler requires time.Timer timer, libs.network.rpc.RPCUtil rpcUtil, data.json.JSONEncoder je {
+component provides repositories.posts.PostsRepository(libs.adaptation.AdaptationLyfecicle), libs.krabs.RemotesHandler requires time.Timer timer, libs.utils.PostsUtils pu, libs.network.rpc.RPCUtil rpcUtil, data.json.JSONEncoder je {
 	static Address remotes[] = new Address[]()
 	
 	implementation RemotesHandler {
@@ -31,20 +31,44 @@ component provides repositories.posts.PostsRepository(libs.adaptation.Adaptation
 			anycast(req)
 		}
 
+		void PostsRepository:setPosts(store Post posts[]) {
+			int spaceSize = remotes.arrayLength
+			for(int i = 0; i < spaceSize; i++) {
+				Post subset[] = new Post[]()
+				for(int j = 0; j < posts.arrayLength; j++) {
+					if(posts[j].id % spaceSize == i) {
+						subset = new Post[](subset, posts[j])
+					}
+
+				}
+
+				SetPostsParamsFormat params = new SetPostsParamsFormat(subset)
+				char requestBody[] = je.jsonFromData(params)
+				Request req = new Request(buildMetaForMethod("setPosts"), requestBody)
+				hashcast(req, i)
+			}
+
+		}
+
 		Post PostsRepository:getPostById(store int postId) {
 			GetPostByIdParamsFormat params = new GetPostByIdParamsFormat(postId)
 			char requestBody[] = je.jsonFromData(params)
 			Request req = new Request(buildMetaForMethod("getPostById"), requestBody)
-			Response res = anycast(req)
+			Response res = hashcast(req, postId)
 			return je.jsonToData(res.content, typeof(Post))
 		}
 
-		Post[] PostsRepository:getPosts(store int page, store int pageSize) {
-			GetPostsParamsFormat params = new GetPostsParamsFormat(page, pageSize)
-			char requestBody[] = je.jsonFromData(params)
+		Post[] PostsRepository:getPosts() {
+			char requestBody[] = ""
 			Request req = new Request(buildMetaForMethod("getPosts"), requestBody)
-			Response res = anycast(req)
-			return je.jsonToArray(res.content, typeof(Post[]))
+			Response res[] = broadcastList(req)
+			Post returnValue[]
+			for(int i = 0; i < res.arrayLength; i++) {
+				Post partialValue[] = je.jsonToArray(res[i].content, typeof(Post[]))
+				returnValue = pu.accumulate(returnValue, partialValue)
+			}
+
+			return returnValue
 		}
 
 		Post[] PostsRepository:getUserFeed(store int userId) {
@@ -58,20 +82,24 @@ component provides repositories.posts.PostsRepository(libs.adaptation.Adaptation
 		void PostsRepository:clearState() {
 			char requestBody[] = ""
 			Request req = new Request(buildMetaForMethod("clearState"), requestBody)
-			anycast(req)
+			broadcastList(req)
 		}
 
-		Response broadcast(Request r) {
-			Response res
-			mutex(pointerLock) {
-				for(int i = 0; i < remotes.arrayLength; i++) {
-					RequestWrapper reqWrapper = new RequestWrapper(remotes[i], r)
-					res = rpcUtil.make(reqWrapper)
-				}
-
+		Response[] broadcastList(Request r) {
+			Response res[] = new Response[]()
+			for(int i = 0; i < remotes.arrayLength; i++) {
+				RequestWrapper reqWrapper = new RequestWrapper(remotes[i], r)
+				Response singleRes = rpcUtil.make(reqWrapper)
+				res = new Response[](res, singleRes)
 			}
 
 			return res
+		}
+
+		Response anycast(Request r) {
+			int i = addressPointer++ % remotes.arrayLength
+			RequestWrapper reqWrapper = new RequestWrapper(remotes[i], r)
+			return rpcUtil.make(reqWrapper)
 		}
 
 		Response hashcast(Request r, int hashKey) {
@@ -83,20 +111,13 @@ component provides repositories.posts.PostsRepository(libs.adaptation.Adaptation
 
 		}
 
-		Response anycast(Request r) {
-			mutex(pointerLock) {
-				int i = addressPointer++ % remotes.arrayLength
-				RequestWrapper reqWrapper = new RequestWrapper(remotes[i], r)
-				return rpcUtil.make(reqWrapper)
-			}
-
-		}
-
 		bool AdaptationLyfecicle:onLoadRemoteState() {
+			setPosts(readingCache)
 			return true
 		}
 
 		bool AdaptationLyfecicle:onUpdateLocalState() {
+			readingCache = getPosts()
 			return true
 		}
 

@@ -16,17 +16,17 @@
         },
         "setPosts": {
             "balance": "posts",
-            "hashKey": "id"
+            "hashkey": "id"
         },
         "getPostById": {
             "returnParser": "je.jsonToData({}, typeof(Post))",
             "remoteReturnParser": "je.jsonFromArray({})",
-            "hashKey": "postId"
+            "hashkey": "postId"
         },
         "getUserFeed": {
             "returnParser": "je.jsonToArray({}, typeof(Post[]))",
             "remoteReturnParser": "je.jsonFromArray({})",
-            "hashKey": "userId"
+            "hashkey": "userId"
         }
     }
 }

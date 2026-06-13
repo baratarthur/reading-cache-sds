@@ -1,7 +1,7 @@
 uses libs.utils.Constants
 
 
-component provides repositories.posts.PostsRepository(libs.adaptation.AdaptationLyfecicle), libs.krabs.RemotesHandler requires time.Timer timer, libs.network.rpc.RPCUtil rpcUtil, data.json.JSONEncoder je {
+component provides repositories.posts.PostsRepository(libs.adaptation.AdaptationLyfecicle), libs.krabs.RemotesHandler requires time.Timer timer, libs.utils.PostsUtils pu, libs.network.rpc.RPCUtil rpcUtil, data.json.JSONEncoder je {
 	static Address remotes[] = new Address[]()
 	
 	implementation RemotesHandler {
@@ -64,21 +64,24 @@ component provides repositories.posts.PostsRepository(libs.adaptation.Adaptation
 		void PostsRepository:clearState() {
 			char requestBody[] = ""
 			Request req = new Request(buildMetaForMethod("clearState"), requestBody)
-			broadcast(req)
+			broadcastList(req)
 		}
 
 		Response[] broadcastList(Request r) {
-			Response res[]
-			mutex(pointerLock) {
-				for(int i = 0; i < remotes.arrayLength; i++) {
-					RequestWrapper reqWrapper = new RequestWrapper(remotes[i], r)
-					Reponse singleRes = rpcUtil.make(reqWrapper)
-					res = new Response[](res, singleRes)
-				}
-
+			Response res[] = new Response[]()
+			for(int i = 0; i < remotes.arrayLength; i++) {
+				RequestWrapper reqWrapper = new RequestWrapper(remotes[i], r)
+				Response singleRes = rpcUtil.make(reqWrapper)
+				res = new Response[](res, singleRes)
 			}
 
 			return res
+		}
+
+		Response anycast(Request r) {
+			int i = addressPointer++ % remotes.arrayLength
+			RequestWrapper reqWrapper = new RequestWrapper(remotes[i], r)
+			return rpcUtil.make(reqWrapper)
 		}
 
 		Response broadcast(Request r) {
@@ -94,19 +97,13 @@ component provides repositories.posts.PostsRepository(libs.adaptation.Adaptation
 			return res
 		}
 
-		Response anycast(Request r) {
-			int i = addressPointer++ % remotes.arrayLength
-			RequestWrapper reqWrapper = new RequestWrapper(remotes[i], r)
-			return rpcUtil.make(reqWrapper)
-		}
-
 		bool AdaptationLyfecicle:onLoadRemoteState() {
+			setPosts(readingCache)
 			return true
 		}
 
 		bool AdaptationLyfecicle:onUpdateLocalState() {
-			char requestBody[] = ""
-			Request req = new Request(buildMetaForMethod("clearState"), requestBody)broadcast(req)
+			readingCache = getPosts()
 			return true
 		}
 

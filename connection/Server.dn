@@ -102,6 +102,7 @@ libs.adaptation.AdaptationLyfecicle {
 
         if (req.resource == "/") {
             responseContent = "Hello!"
+            logger.storeInfo("[START]")
             return build200(req, responseContent)
         } else if (req.resource == "/all") {
             // int page = httpUtil.getQueryStringValue(req.queryString, "page").string.intFromString()

@@ -19,7 +19,6 @@ component provides libs.krabs.LatencyStore requires time.Calendar ic, time.DateU
         char logMsg[] = new char[](
             debugMSG, " ",
             req.command, " ", req.resource, ": ",
-            iu.makeString(du.toMilliseconds(ic.getTime())), " : ",
             iu.makeString(miliseconds), "ms"
         )
         logger.storeInfo(logMsg)

@@ -218,7 +218,7 @@ libs.adaptation.AdaptationLyfecicle {
     }
 
     void changeRepo(int option, Address remotes[]) {
-        logger.info("Changing repository to $(names[option].string)")
+        logger.info("Changing repository from $(names[lastComponentIndex].string) to $(names[option].string)")
         if(lastComponentIndex != 0) {
             AdaptationLyfecicle oldComponentLifecycle = new AdaptationLyfecicle() from repoComponents[lastComponentIndex].mainComponent
             oldComponentLifecycle.onUpdateLocalState()

@@ -220,8 +220,13 @@ libs.adaptation.AdaptationLyfecicle {
     void changeRepo(int option, Address remotes[]) {
         logger.info("Changing repository from $(names[lastComponentIndex].string) to $(names[option].string)")
         if(lastComponentIndex != 0) {
-            AdaptationLyfecicle oldComponentLifecycle = new AdaptationLyfecicle() from repoComponents[lastComponentIndex].mainComponent
-            oldComponentLifecycle.onUpdateLocalState()
+            repoComponents[lastComponentIndex].mainComponent.callInterface(
+                repo,
+                "libs.adaptation.AdaptationLyfecicle",
+                null,
+                AdaptationLyfecicle.[onUpdateLocalState()],
+                null
+            )
         }
 
         adapter.adaptObject(repoComponents[lastComponentIndex].mainComponent, repo, repoComponents[option].mainComponent, "repositories.posts.PostsRepository")
@@ -231,9 +236,15 @@ libs.adaptation.AdaptationLyfecicle {
             RemotesHandler handler = new RemotesHandler() from repoComponents[option].mainComponent
             handler.setRemotes(remotes)
             logger.info("$debugMSG call add remotes: $( je.jsonFromArray( handler.getRemotes() ) )")
-            AdaptationLyfecicle newComponentLifecycle = new AdaptationLyfecicle() from repoComponents[option].mainComponent
-            repo.clearState()
-            newComponentLifecycle.onLoadRemoteState()
+            repo.clearState() // clear remote state
+            repoComponents[option].mainComponent.callInterface(
+                repo,
+                "libs.adaptation.AdaptationLyfecicle",
+                null,
+                AdaptationLyfecicle.[onLoadRemoteState()],
+                null
+            )
+            logger.info("$debugMSG current state: $( je.jsonFromArray( repo.getPosts() ) )")
         }
     }
 }

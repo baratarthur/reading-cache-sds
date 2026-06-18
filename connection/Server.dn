@@ -123,6 +123,8 @@ libs.adaptation.AdaptationLyfecicle {
             return build200(req, responseContent)
         } else if (su.startsWith(req.resource, "/post/")) {
             String pathInfo[] = su.explode(req.resource, "/") // expected: ["post", "<postId:number>"]
+            char postIdStr[] = pathInfo[1].string
+            logger.info("Post Id: $postIdStr")
             int postId = pathInfo[1].string.intFromString()
             Post post = repo.getPostById(postId)
             responseContent = je.jsonFromData(post)

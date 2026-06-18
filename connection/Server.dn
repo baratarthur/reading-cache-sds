@@ -229,6 +229,9 @@ libs.adaptation.AdaptationLyfecicle {
             )
         }
 
+        char currentState[] = je.jsonFromArray(repo.getPosts())
+        logger.info("Current posts state: $currentState")
+
         adapter.adaptObject(repoComponents[lastComponentIndex].mainComponent, repo, repoComponents[option].mainComponent, "repositories.posts.PostsRepository")
         lastComponentIndex = option
         
@@ -246,5 +249,8 @@ libs.adaptation.AdaptationLyfecicle {
             )
             logger.info("$debugMSG current state: $( je.jsonFromArray( repo.getPosts() ) )")
         }
+
+        char stateAfterAdaptation[] = je.jsonFromArray(repo.getPosts())
+        logger.info("State after adaptation: $stateAfterAdaptation")
     }
 }

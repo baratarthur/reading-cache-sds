@@ -8,7 +8,9 @@ const int CONNECTION_READ_POOL_SIZE = 90
 const int MAX_TTL = 5 * 60 * 1000 // 5 minutes
 
 component provides repositories.posts.PostsRepository requires time.DateUtil du, time.Calendar ic, data.IntUtil iu, data.mysql.MySQL,
-libs.utils.Logger logger, libs.krabs.LatencyStore ls {
+libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je {
+    Mutex readingCacheLock = new Mutex()
+    
     MySQL createNewConnection() {
         return new MySQL(DatabaseConfig.host, DatabaseConfig.port, DatabaseConfig.user, DatabaseConfig.password, DatabaseConfig.databaseName)
     }
@@ -81,7 +83,14 @@ libs.utils.Logger logger, libs.krabs.LatencyStore ls {
                 }
             }
             Post post = new Post(id, userId, likes, content, ttl)
-            readingCache = new Post[](readingCache, post) // add to cache
+            char postStr[] = je.jsonFromData(post)
+            logger.info("post requested: $postStr")
+            mutex(readingCacheLock) {
+                readingCache = new Post[](readingCache, post) // add to cache
+            }
+            char cacheStr[] = je.jsonFromArray(readingCache)
+            logger.info("post requested: $cacheStr")
+
             return post
         }
         return null

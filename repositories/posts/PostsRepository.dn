@@ -39,6 +39,8 @@ libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je {
     }
 
     Post PostsRepository:getPostById(store int postId) {
+        logger.info("Post id in repo: $(iu.makeString(postId))")
+
         for (int i = 0; i < readingCache.arrayLength; i++) {
             if (readingCache[i].id == postId) {
                 logger.info("post found in cache!")
@@ -60,11 +62,15 @@ libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je {
         }
         
         char query[] = "SELECT * FROM posts WHERE id = $(iu.makeString(postId)) LIMIT 1;"
+        logger.info("Query: $query")
 
         MySQL conn = createNewConnection()
         if(!conn.execute(query)) throw new Exception("Failed to fetch post from database")
         MySQLRow result[] = conn.fetchAll()
         conn.close()
+
+        char resultStr[] = je.jsonFromArray(result)
+        logger.info("result from database $resultStr")
         if (result.arrayLength > 0) {
             MySQLRow row = result[0]
             int id

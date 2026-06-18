@@ -43,9 +43,10 @@ libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je {
 
         for (int i = 0; i < readingCache.arrayLength; i++) {
             if (readingCache[i].id == postId) {
-                logger.info("post found in cache!")
                 DateTime diff = du.diff(ic.getTime(), readingCache[i].ttl)
-                if(du.toMilliseconds(diff) < MAX_TTL) {
+                char diffStr[] = iu.makeString(du.toMilliseconds(diff))
+                logger.info("post found in cache! diff $diffStr ")
+                if(du.toMilliseconds(diff) < 5 * 60 * 1000) {
                     return readingCache[i]    
                 } else {
                     // Post expired, remove from cache

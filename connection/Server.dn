@@ -125,8 +125,14 @@ libs.adaptation.AdaptationLyfecicle {
             String pathInfo[] = su.explode(req.resource, "/") // expected: ["post", "<postId:number>"]
             int postId = pathInfo[1].string.intFromString()
             Post post = repo.getPostByIdFromCache(postId)
+            if(post != null) {
+                char postStr[] = je.jsonFromData(post)
+                logger.info("post found in cache: $postStr")
+            }
             if(post == null) {
                 post = repo.getPostById(postId)
+                char postStr[] = je.jsonFromData(post)
+                logger.info("post loaded from database: $postStr")
                 repo.addPostInCache(post)
             }
             responseContent = je.jsonFromData(post)

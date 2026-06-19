@@ -7,7 +7,7 @@ const int WRITING_CACHE_SIZE = 40
 const int CONNECTION_READ_POOL_SIZE = 90
 const int MAX_TTL = 5 * 60 * 1000 // 5 minutes
 
-component provides repositories.posts.PostsRepository requires time.DateUtil du, time.Calendar ic, data.IntUtil iu, data.mysql.MySQL,
+component provides repositories.posts.PostsRepository requires time.TimeUnix timeUnix, time.Calendar ic, data.IntUtil iu, data.mysql.MySQL,
 libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je, libs.utils.PostsUtils pu {
     Mutex readingCacheLock = new Mutex()
     
@@ -41,24 +41,18 @@ libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je, 
     Post PostsRepository:getPostByIdFromCache(store int postId) {
         for (int i = 0; i < readingCache.arrayLength; i++) {
             if (readingCache[i].id == postId) {
-                DateTime diff = du.diff(ic.getTime(), readingCache[i].ttl)
-                char diffStr[] = iu.makeString(du.toMilliseconds(diff))
-                logger.info("post found in cache! diff $diffStr")
-                if(du.toMilliseconds(diff) < 5 * 60 * 1000) {
+                int ttlUnix = timeUnix.toUnixTime(readingCache[i].ttl)
+                int nowUnix = timeUnix.toUnixTime(ic.getTime())
+                if((nowUnix - ttlUnix) < 5 * 60 * 1000) {
                     return readingCache[i]    
                 }
             }
         }
-        logger.info("Post not found in cache!")
         return null
     }
 
     void PostsRepository:addPostInCache(store Post cachePost) {
-        char postStr[] = je.jsonFromData(cachePost)
-        logger.info("post requested: $postStr")
         mutex(readingCacheLock) { readingCache = new Post[](readingCache, cachePost) }
-        char cacheStr[] = je.jsonFromArray(readingCache)
-        logger.info("post requested: $cacheStr")
     }
 
     Post PostsRepository:getPostById(store int postId) {

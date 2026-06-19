@@ -11,7 +11,7 @@ component provides libs.krabs.LatencyStore requires time.Calendar ic, time.TimeU
         int startUnix = timeUnix.toUnixTime(start) + (start.second*1000) + start.millisecond
         int nowUnix = timeUnix.toUnixTime(now) + (now.second*1000) + now.millisecond
         int diff = nowUnix - startUnix
-        logger.info("init: $(iu.makeString(startUnix)) | now: $(iu.makeString(nowUnix)) | diff: $(iu.makeString(diff))")
+        // logger.info("init: $(iu.makeString(startUnix)) | now: $(iu.makeString(nowUnix)) | diff: $(iu.makeString(diff))")
         return diff
     }
 

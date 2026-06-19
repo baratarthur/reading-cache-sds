@@ -14,6 +14,7 @@ component provides libs.krabs.LatencyStore requires time.Calendar ic, time.TimeU
             "| now: ",
             je.jsonFromData(now)
         )
+        logger.info(info)
         int startUnix = timeUnix.toUnixTime(start)
         int nowUnix = timeUnix.toUnixTime(now)
         logger.info("init: $(iu.makeString(startUnix)) | now: $(iu.makeString(nowUnix))")

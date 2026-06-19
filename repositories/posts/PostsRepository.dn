@@ -8,7 +8,7 @@ const int CONNECTION_READ_POOL_SIZE = 90
 const int MAX_TTL = 5 * 60 * 1000 // 5 minutes
 
 component provides repositories.posts.PostsRepository requires time.DateUtil du, time.Calendar ic, data.IntUtil iu, data.mysql.MySQL,
-libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je {
+libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je, libs.utils.PostsUtils pu {
     Mutex readingCacheLock = new Mutex()
     
     MySQL createNewConnection() {
@@ -37,68 +37,40 @@ libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je {
     Post[] PostsRepository:getPosts() {
         return readingCache
     }
-
-    Post PostsRepository:getPostById(store int postId) {
-        logger.info("Post id in repo: $(iu.makeString(postId))")
-
+    
+    Post PostsRepository:getPostByIdFromCache(store int postId) {
         for (int i = 0; i < readingCache.arrayLength; i++) {
             if (readingCache[i].id == postId) {
                 DateTime diff = du.diff(ic.getTime(), readingCache[i].ttl)
                 char diffStr[] = iu.makeString(du.toMilliseconds(diff))
-                logger.info("post found in cache! diff $diffStr ")
+                logger.info("post found in cache! diff $diffStr")
                 if(du.toMilliseconds(diff) < 5 * 60 * 1000) {
                     return readingCache[i]    
-                } else {
-                    // Post expired, remove from cache
-                    Post newPosts[] = new Post[]()
-                    for (int j = 0; j < readingCache.arrayLength; j++) {
-                        if(readingCache[j].id != postId) {
-                            newPosts = new Post[](newPosts, readingCache[j])
-                        }
-                    }
-                    readingCache = newPosts
-                    break
                 }
             }
         }
-        
+        logger.info("Post not found in cache!")
+        return null
+    }
+
+    void PostsRepository:addPostInCache(store Post cachePost) {
+        char postStr[] = je.jsonFromData(cachePost)
+        logger.info("post requested: $postStr")
+        mutex(readingCacheLock) { readingCache = new Post[](readingCache, cachePost) }
+        char cacheStr[] = je.jsonFromArray(readingCache)
+        logger.info("post requested: $cacheStr")
+    }
+
+    Post PostsRepository:getPostById(store int postId) {
         char query[] = "SELECT * FROM posts WHERE id = $(iu.makeString(postId)) LIMIT 1;"
-        logger.info("Query: $query")
 
         MySQL conn = createNewConnection()
         if(!conn.execute(query)) throw new Exception("Failed to fetch post from database")
         MySQLRow result[] = conn.fetchAll()
         conn.close()
 
-        char resultStr[] = je.jsonFromArray(result)
-        logger.info("result from database $resultStr")
         if (result.arrayLength > 0) {
-            MySQLRow row = result[0]
-            int id
-            int userId
-            int likes
-            char content[]
-            DateTime ttl = ic.getTime()
-            for(int i = 0; i < row.fields.arrayLength; i++) {
-                if ( row.fields[i].name == "id") {
-                    id = iu.intFromString(row.fields[i].value)
-                } else if (row.fields[i].name == "userId") {
-                    userId = iu.intFromString(row.fields[i].value)
-                } else if (row.fields[i].name == "likes") {
-                    likes = iu.intFromString(row.fields[i].value)
-                } else if (row.fields[i].name == "content") {
-                    content = row.fields[i].value
-                }
-            }
-            Post post = new Post(id, userId, likes, content, ttl)
-            char postStr[] = je.jsonFromData(post)
-            logger.info("post requested: $postStr")
-            mutex(readingCacheLock) {
-                readingCache = new Post[](readingCache, post) // add to cache
-            }
-            char cacheStr[] = je.jsonFromArray(readingCache)
-            logger.info("post requested: $cacheStr")
-
+            Post post = pu.getPostFromMYSQLRow(result[0])
             return post
         }
         return null
@@ -116,22 +88,7 @@ libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je {
 
         if (result.arrayLength > 0) {
             for(int i = 0; i < result.arrayLength; i++) {
-                MySQLRow row = result[i]
-                int id
-                int likes
-                char content[]
-                for(int j = 0; j < row.fields.arrayLength; j++) {
-                    if ( row.fields[j].name == "id") {
-                        id = iu.intFromString(row.fields[j].value)
-                    } else if (row.fields[j].name == "likes") {
-                        likes = iu.intFromString(row.fields[j].value)
-                    } else if (row.fields[j].name == "content") {
-                        content = row.fields[j].value
-                    } else if (row.fields[j].name == "userId") {
-                        userId = iu.intFromString(row.fields[j].value)
-                    }
-                }
-                Post post = new Post(id, userId, likes, content, null)
+                Post post =  pu.getPostFromMYSQLRow(result[i])
                 userPosts = new Post[](userPosts, post)
             }
         }

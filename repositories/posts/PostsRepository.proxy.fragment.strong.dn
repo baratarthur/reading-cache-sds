@@ -50,10 +50,25 @@ component provides repositories.posts.PostsRepository(libs.adaptation.Adaptation
 
 		}
 
+		void PostsRepository:addPostInCache(store Post cachePost) {
+			AddPostInCacheParamsFormat params = new AddPostInCacheParamsFormat(cachePost)
+			char requestBody[] = je.jsonFromData(params)
+			Request req = new Request(buildMetaForMethod("addPostInCache"), requestBody)
+			hashcast(req, cachePost.id)
+		}
+
 		Post PostsRepository:getPostById(store int postId) {
 			GetPostByIdParamsFormat params = new GetPostByIdParamsFormat(postId)
 			char requestBody[] = je.jsonFromData(params)
 			Request req = new Request(buildMetaForMethod("getPostById"), requestBody)
+			Response res = anycast(req)
+			return je.jsonToData(res.content, typeof(Post))
+		}
+
+		Post PostsRepository:getPostByIdFromCache(store int postId) {
+			GetPostByIdFromCacheParamsFormat params = new GetPostByIdFromCacheParamsFormat(postId)
+			char requestBody[] = je.jsonFromData(params)
+			Request req = new Request(buildMetaForMethod("getPostByIdFromCache"), requestBody)
 			Response res = hashcast(req, postId)
 			return je.jsonToData(res.content, typeof(Post))
 		}

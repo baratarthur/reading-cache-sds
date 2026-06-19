@@ -20,7 +20,15 @@
         },
         "getPostById": {
             "returnParser": "je.jsonToData({}, typeof(Post))",
-            "remoteReturnParser": "je.jsonFromArray({})",
+            "remoteReturnParser": "je.jsonFromData({})",
+            "hashkey": "postId"
+        },
+        "addPostInCache": {
+            "hashkey": "cachePost.id"
+        },
+        "getPostByIdFromCache": {
+            "returnParser": "je.jsonToData({}, typeof(Post))",
+            "remoteReturnParser": "je.jsonFromData({})",
             "hashkey": "postId"
         },
         "getUserFeed": {

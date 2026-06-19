@@ -43,7 +43,7 @@ libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je, 
             if (readingCache[i].id == postId) {
                 int ttlUnixInSeconds = timeUnix.toUnixTime(readingCache[i].ttl)
                 int nowUnixInSeconds = timeUnix.toUnixTime(ic.getTime())
-                if((nowUnix - ttlUnix) < 5 * 60) {
+                if((nowUnixInSeconds - ttlUnixInSeconds) < 5 * 60) {
                     return readingCache[i]    
                 }
             }

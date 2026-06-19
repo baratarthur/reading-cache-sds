@@ -127,12 +127,12 @@ libs.adaptation.AdaptationLyfecicle {
             Post post = repo.getPostByIdFromCache(postId)
             if(post != null) {
                 char postStr[] = je.jsonFromData(post)
-                logger.info("post found in cache: $postStr")
+                logger.info("post $(iu.makeString(postId)) found in cache!")
             }
             if(post == null) {
                 post = repo.getPostById(postId)
                 char postStr[] = je.jsonFromData(post)
-                logger.info("post loaded from database: $postStr")
+                logger.info("post $(iu.makeString(postId)) loaded from database!")
                 repo.addPostInCache(post)
             }
             responseContent = je.jsonFromData(post)

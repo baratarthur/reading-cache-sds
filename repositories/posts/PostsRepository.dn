@@ -41,9 +41,9 @@ libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je, 
     Post PostsRepository:getPostByIdFromCache(store int postId) {
         for (int i = 0; i < readingCache.arrayLength; i++) {
             if (readingCache[i].id == postId) {
-                int ttlUnix = timeUnix.toUnixTime(readingCache[i].ttl)
-                int nowUnix = timeUnix.toUnixTime(ic.getTime())
-                if((nowUnix - ttlUnix) < 5 * 60 * 1000) {
+                int ttlUnixInSeconds = timeUnix.toUnixTime(readingCache[i].ttl)
+                int nowUnixInSeconds = timeUnix.toUnixTime(ic.getTime())
+                if((nowUnix - ttlUnix) < 5 * 60) {
                     return readingCache[i]    
                 }
             }

@@ -84,5 +84,6 @@ data:
         likes INT DEFAULT 0,
         content TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (id)
+        PRIMARY KEY (id),
+        INDEX idx_userid (userId)
     );

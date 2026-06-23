@@ -22,8 +22,6 @@ component provides libs.network.rpc.RPCUtil requires data.json.JSONEncoder je, n
                 Constants.SEPARATOR,
                 req.r.content
             )
-            logger.info("$debugMSG - raw request - $requestContent")
-            logger.info("$debugMSG - address - $(req.to.name) $(iu.makeString(req.to.port))")
         } else {
             requestContent = je.jsonFromArray(req.r.meta)
         }
@@ -46,7 +44,8 @@ component provides libs.network.rpc.RPCUtil requires data.json.JSONEncoder je, n
         int executionTime = ls.getMilisecondsExecutionTimeSince(startExecutionTime)
         char logMsg[] = new char[](
             debugMSG, " ",
-            "RPC execution time at $(je.jsonFromArray(req.r.meta)): ",
+            "RPC execution time at $(je.jsonFromArray(req.r.meta))",
+            "- address - $(req.to.name) $(iu.makeString(req.to.port)):",
             iu.makeString(executionTime),
             " ms"
         )

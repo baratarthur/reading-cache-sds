@@ -39,10 +39,10 @@ spec:
         resources:
           # 'requests' garante o recurso, 'limits' impede que o container consuma tudo do nó
           requests:
-            cpu: "500m"
+            cpu: "1"
             memory: "1.5Gi"
           limits:
-            cpu: "4000m"
+            cpu: "4"
             memory: "2Gi"
         env:
         - name: MYSQL_DATABASE

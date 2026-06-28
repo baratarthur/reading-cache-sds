@@ -102,7 +102,7 @@ libs.adaptation.AdaptationLyfecicle {
 
         if (req.resource == "/") {
             responseContent = "Hello!"
-            logger.storeInfo("[START] ======================")
+            logger.storeInfo("[START] ======================\n")
             return build200(req, responseContent)
         } else if (req.resource == "/end") {
             responseContent = "Finish test!"
@@ -124,16 +124,16 @@ libs.adaptation.AdaptationLyfecicle {
         } else if (su.startsWith(req.resource, "/post/")) {
             String pathInfo[] = su.explode(req.resource, "/") // expected: ["post", "<postId:number>"]
             int postId = pathInfo[1].string.intFromString()
-            Post post = repo.getPostByIdFromCache(postId)
+            Post post = repo.getPostByIdFromCache(postId) // stateful
             if(post != null) {
                 char postStr[] = je.jsonFromData(post)
                 logger.info("post $(iu.makeString(postId)) found in cache!")
             }
             if(post == null) {
-                post = repo.getPostById(postId)
+                post = repo.getPostById(postId) // stateless
                 char postStr[] = je.jsonFromData(post)
                 logger.info("post $(iu.makeString(postId)) loaded from database!")
-                repo.addPostInCache(post)
+                repo.addPostInCache(post) // stateful
             }
             responseContent = je.jsonFromData(post)
             return build200(req, responseContent)

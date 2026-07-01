@@ -25,7 +25,7 @@ component provides libs.krabs.LatencyStore requires time.Calendar ic, time.TimeU
             req.command, " ", req.resource, ": ",
             iu.makeString(miliseconds), "ms"
         )
-        logger.storeInfo(logMsg)
+        // logger.storeInfo(logMsg)
     }
 
     dec LatencyStore:getCurrentAverageLatency() {

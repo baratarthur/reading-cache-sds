@@ -4,7 +4,6 @@ uses libs.utils.DatabaseConfig
 const char debugMSG[] = "[@PostsRepository]"
 const int PAGINATION_SIZE = 5
 const int WRITING_CACHE_SIZE = 40
-const int CONNECTION_READ_POOL_SIZE = 90
 const int MAX_TTL = 5 * 60 * 1000 // 5 minutes
 
 component provides repositories.posts.PostsRepository requires time.TimeUnix timeUnix, time.Calendar ic, data.IntUtil iu, data.mysql.MySQL,
@@ -28,7 +27,7 @@ libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je, 
             iu.makeString(executionTime),
             " ms"
         )
-        logger.storeInfo(logMsg)
+        // logger.storeInfo(logMsg)
     }
 
     void PostsRepository:setPosts(store Post posts[]) {
@@ -53,7 +52,7 @@ libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je, 
                         iu.makeString(executionTime),
                         " ms"
                     )
-                    logger.storeInfo(logMsg)
+                    // logger.storeInfo(logMsg)
                     return readingCache[i]    
                 }
             }
@@ -66,7 +65,7 @@ libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je, 
             iu.makeString(executionTime),
             " ms"
         )
-        logger.storeInfo(logMsg)
+        // logger.storeInfo(logMsg)
         return null
     }
 
@@ -91,7 +90,7 @@ libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je, 
             iu.makeString(executionTime),
             " ms"
         )
-        logger.storeInfo(logMsg)
+        // logger.storeInfo(logMsg)
         if (result.arrayLength > 0) {
             Post post = pu.getPostFromMYSQLRow(result[0])
             return post
@@ -122,7 +121,7 @@ libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je, 
             "get feed: ",
             iu.makeString(executionTime)
         )
-        logger.storeInfo(logMsg)
+        // logger.storeInfo(logMsg)
         return userPosts
     }
 

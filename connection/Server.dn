@@ -63,7 +63,7 @@ libs.adaptation.AdaptationLyfecicle {
 
         initRepo()
 
-		logger.info("$debugMSG Server started on port $(iu.makeString(PORT))")
+		logger.storeInfo("$debugMSG Server started on port $(iu.makeString(PORT))")
 		while (serviceStatus) {
 			TCPSocket client = new TCPSocket()
 			if (client.accept(host)) asynch::handleRequest(client)
@@ -85,15 +85,17 @@ libs.adaptation.AdaptationLyfecicle {
 
     HTTPResponse process(HTTPMessage req) {
         HTTPResponse res = null
-        
+        DateTime startExecutionTime = ic.getTime()
+
         if(req.command == "GET") {
-            DateTime startExecutionTime = ic.getTime()
             res = processGetRequests(req)
-            int executionTimeInMs = ls.getMilisecondsExecutionTimeSince(startExecutionTime)
-            ls.storeExecutionTime(executionTimeInMs, req)
         } else if (req.command == "POST") {
             res = processPostRequests(req)
         }
+
+        int executionTimeInMs = ls.getMilisecondsExecutionTimeSince(startExecutionTime)
+        ls.storeExecutionTime(executionTimeInMs, req)
+
         return res
     }
 

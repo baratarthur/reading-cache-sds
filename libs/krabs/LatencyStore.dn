@@ -4,7 +4,7 @@ const char debugMSG[] = "[LATENCY] -"
 component provides libs.krabs.LatencyStore requires time.Calendar ic, time.TimeUnix timeUnix,
     libs.network.http.HTTPUtil, data.IntUtil iu, libs.utils.Logger logger, data.json.JSONEncoder je {
     dec latencyAvarage = 0.0
-    const dec ALPHA = 0.7
+    const dec ALPHA = 0.05
 
     int LatencyStore:getMilisecondsExecutionTimeSince(DateTime start) {
         DateTime now = ic.getTime()

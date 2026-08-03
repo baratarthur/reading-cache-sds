@@ -1,7 +1,7 @@
 uses libs.utils.Constants
 
 
-component provides repositories.posts.PostsRepository(libs.adaptation.AdaptationLyfecicle), libs.krabs.RemotesHandler requires time.Timer timer, libs.utils.PostsUtils pu, libs.network.rpc.RPCUtil rpcUtil, data.json.JSONEncoder je {
+component provides repositories.cache.CacheRepository(libs.adaptation.AdaptationLyfecicle), libs.krabs.RemotesHandler requires time.Timer timer, libs.utils.PostsUtils pu, libs.network.rpc.RPCUtil rpcUtil, data.json.JSONEncoder je {
 	static Address remotes[] = new Address[]()
 	
 	implementation RemotesHandler {
@@ -15,7 +15,7 @@ component provides repositories.posts.PostsRepository(libs.adaptation.Adaptation
 
 	}
 
-	implementation PostsRepository {
+	implementation CacheRepository {
 		int addressPointer = 0
 		Mutex pointerLock = new Mutex()
 		
@@ -24,14 +24,7 @@ component provides repositories.posts.PostsRepository(libs.adaptation.Adaptation
 			return new Metadata[](metaMethod)
 		}
 
-		void PostsRepository:addPost(store Post newPost) {
-			AddPostParamsFormat params = new AddPostParamsFormat(newPost)
-			char requestBody[] = je.jsonFromData(params)
-			Request req = new Request(buildMetaForMethod("addPost"), requestBody)
-			anycast(req)
-		}
-
-		void PostsRepository:setPosts(store Post posts[]) {
+		void CacheRepository:setPosts(store Post posts[]) {
 			int spaceSize = remotes.arrayLength
 			for(int i = 0; i < spaceSize; i++) {
 				Post subset[] = new Post[]()
@@ -50,22 +43,14 @@ component provides repositories.posts.PostsRepository(libs.adaptation.Adaptation
 
 		}
 
-		void PostsRepository:addPostInCache(store Post cachePost) {
+		void CacheRepository:addPostInCache(store Post cachePost) {
 			AddPostInCacheParamsFormat params = new AddPostInCacheParamsFormat(cachePost)
 			char requestBody[] = je.jsonFromData(params)
 			Request req = new Request(buildMetaForMethod("addPostInCache"), requestBody)
 			hashcast(req, cachePost.id)
 		}
 
-		Post PostsRepository:getPostById(store int postId) {
-			GetPostByIdParamsFormat params = new GetPostByIdParamsFormat(postId)
-			char requestBody[] = je.jsonFromData(params)
-			Request req = new Request(buildMetaForMethod("getPostById"), requestBody)
-			Response res = anycast(req)
-			return je.jsonToData(res.content, typeof(Post))
-		}
-
-		Post PostsRepository:getPostByIdFromCache(store int postId) {
+		Post CacheRepository:getPostByIdFromCache(store int postId) {
 			GetPostByIdFromCacheParamsFormat params = new GetPostByIdFromCacheParamsFormat(postId)
 			char requestBody[] = je.jsonFromData(params)
 			Request req = new Request(buildMetaForMethod("getPostByIdFromCache"), requestBody)
@@ -73,7 +58,7 @@ component provides repositories.posts.PostsRepository(libs.adaptation.Adaptation
 			return je.jsonToData(res.content, typeof(Post))
 		}
 
-		Post[] PostsRepository:getPosts() {
+		Post[] CacheRepository:getPosts() {
 			char requestBody[] = ""
 			Request req = new Request(buildMetaForMethod("getPosts"), requestBody)
 			Response res[] = broadcastList(req)
@@ -86,15 +71,7 @@ component provides repositories.posts.PostsRepository(libs.adaptation.Adaptation
 			return returnValue
 		}
 
-		Post[] PostsRepository:getUserFeed(store int userId) {
-			GetUserFeedParamsFormat params = new GetUserFeedParamsFormat(userId)
-			char requestBody[] = je.jsonFromData(params)
-			Request req = new Request(buildMetaForMethod("getUserFeed"), requestBody)
-			Response res = anycast(req)
-			return je.jsonToArray(res.content, typeof(Post[]))
-		}
-
-		void PostsRepository:clearState() {
+		void CacheRepository:clearState() {
 			char requestBody[] = ""
 			Request req = new Request(buildMetaForMethod("clearState"), requestBody)
 			broadcastList(req)
@@ -118,21 +95,18 @@ component provides repositories.posts.PostsRepository(libs.adaptation.Adaptation
 		}
 
 		Response hashcast(Request r, int hashKey) {
-			mutex(pointerLock) {
-				int i = hashKey % remotes.arrayLength
-				RequestWrapper reqWrapper = new RequestWrapper(remotes[i], r)
-				return rpcUtil.make(reqWrapper)
-			}
-
+			int i = hashKey % remotes.arrayLength
+			RequestWrapper reqWrapper = new RequestWrapper(remotes[i], r)
+			return rpcUtil.make(reqWrapper)
 		}
 
 		bool AdaptationLyfecicle:onLoadRemoteState() {
-			setPosts(readingCache)
+			setPosts(cache)
 			return true
 		}
 
 		bool AdaptationLyfecicle:onUpdateLocalState() {
-			readingCache = getPosts()
+			cache = getPosts()
 			return true
 		}
 

@@ -19,30 +19,30 @@ data LatencyCheckDTO {
 }
 
 component provides Server(Destructor) requires net.TCPSocket, net.TCPServerSocket, libs.utils.Logger logger, data.IntUtil iu,
-composition.Adapt adapter, composition.RecursiveLoader loader, repositories.posts.PostsRepository, libs.network.http.HTTPUtil httpUtil,
+composition.Adapt adapter, composition.RecursiveLoader loader, repositories.posts.PostsRepository repo, repositories.cache.CacheRepository, libs.network.http.HTTPUtil httpUtil,
 data.StringUtil su, data.json.JSONEncoder je, data.json.JSONParser jsonParser, time.Calendar ic, libs.krabs.LatencyStore ls, libs.krabs.RemotesHandler,
 libs.adaptation.AdaptationLyfecicle {
-    PostsRepository repo
+    CacheRepository cacheRepo
     LoadedComponents repoComponents[] = new LoadedComponents[](
-        loader.load("repositories/posts/PostsRepository.o"),
-        loader.load("repositories/posts/PostsRepository.proxy.replicate.strong.o"),
-        loader.load("repositories/posts/PostsRepository.proxy.replicate.weak.o"),
-        loader.load("repositories/posts/PostsRepository.proxy.fragment.strong.o"),
-        loader.load("repositories/posts/PostsRepository.proxy.fragment.weak.o")
+        loader.load("repositories/cache/CacheRepository.o"),
+        loader.load("repositories/cache/CacheRepository.proxy.replicate.strong.o"),
+        loader.load("repositories/cache/CacheRepository.proxy.replicate.weak.o"),
+        loader.load("repositories/cache/CacheRepository.proxy.fragment.strong.o"),
+        loader.load("repositories/cache/CacheRepository.proxy.fragment.weak.o")
     )
     String names[] = new String[](
-        new String("PostsRepository"),
-        new String("PostsRepository with strong replication"), 
-        new String("PostsRepository with weak replication"),
-        new String("PostsRepository with strong fragmentation"), 
-        new String("PostsRepository with weak fragmentation")
+        new String("CacheRepository"),
+        new String("CacheRepository with strong replication"), 
+        new String("CacheRepository with weak replication"),
+        new String("CacheRepository with strong fragmentation"), 
+        new String("CacheRepository with weak fragmentation")
     )
     String remoteNames[] = new String[](
-        new String("post-repository"),
-        new String("post-repository-replicate-strong"),
-        new String("post-repository-replicate-weak"),
-        new String("post-repository-fragment-strong"),
-        new String("post-repository-fragment-weak")
+        new String("cache-repository"),
+        new String("cache-repository-replicate-strong"),
+        new String("cache-repository-replicate-weak"),
+        new String("cache-repository-fragment-strong"),
+        new String("cache-repository-fragment-weak")
     )
     int lastComponentIndex = 0
     bool serviceStatus = false
@@ -71,7 +71,7 @@ libs.adaptation.AdaptationLyfecicle {
     }
 
     void initRepo() {
-        repo = new PostsRepository() from repoComponents[lastComponentIndex].mainComponent
+        cacheRepo = new CacheRepository() from repoComponents[lastComponentIndex].mainComponent
     }
     
     void Server:handleRequest(store TCPSocket s) {
@@ -113,7 +113,7 @@ libs.adaptation.AdaptationLyfecicle {
         } else if (req.resource == "/all") {
             // int page = httpUtil.getQueryStringValue(req.queryString, "page").string.intFromString()
             // int pageSize = httpUtil.getQueryStringValue(req.queryString, "pageSize").string.intFromString()
-            Post allPosts[] = repo.getPosts()
+            Post allPosts[] = cacheRepo.getPosts()
             responseContent = je.jsonFromArray(allPosts)
             return build200(req, responseContent)
         } else if (su.startsWith(req.resource, "/feed/")) {
@@ -126,7 +126,7 @@ libs.adaptation.AdaptationLyfecicle {
         } else if (su.startsWith(req.resource, "/post/")) {
             String pathInfo[] = su.explode(req.resource, "/") // expected: ["post", "<postId:number>"]
             int postId = pathInfo[1].string.intFromString()
-            Post post = repo.getPostByIdFromCache(postId) // stateful
+            Post post = cacheRepo.getPostByIdFromCache(postId) // stateful
             if(post != null) {
                 char postStr[] = je.jsonFromData(post)
                 logger.info("post $(iu.makeString(postId)) found in cache!")
@@ -135,7 +135,7 @@ libs.adaptation.AdaptationLyfecicle {
                 post = repo.getPostById(postId) // stateless
                 char postStr[] = je.jsonFromData(post)
                 logger.info("post $(iu.makeString(postId)) loaded from database!")
-                repo.addPostInCache(post) // stateful
+                cacheRepo.addPostInCache(post) // stateful
             }
             responseContent = je.jsonFromData(post)
             return build200(req, responseContent)
@@ -233,7 +233,7 @@ libs.adaptation.AdaptationLyfecicle {
         logger.info("Changing repository from $(names[lastComponentIndex].string) to $(names[option].string)")
         if(lastComponentIndex != 0) {
             repoComponents[lastComponentIndex].mainComponent.callInterface(
-                repo,
+                cacheRepo,
                 "libs.adaptation.AdaptationLyfecicle",
                 null,
                 AdaptationLyfecicle.[onUpdateLocalState()],
@@ -241,28 +241,27 @@ libs.adaptation.AdaptationLyfecicle {
             )
         }
 
-        char currentState[] = je.jsonFromArray(repo.getPosts())
-        logger.info("Current posts state: $currentState")
+        char currentState[] = je.jsonFromArray(cacheRepo.getPosts())
+        logger.info("Current posts state: $(iu.makeString(currentState.arrayLength))")
 
-        adapter.adaptObject(repoComponents[lastComponentIndex].mainComponent, repo, repoComponents[option].mainComponent, "repositories.posts.PostsRepository")
+        adapter.adaptObject(repoComponents[lastComponentIndex].mainComponent, cacheRepo, repoComponents[option].mainComponent, "repositories.cache.CacheRepository")
         lastComponentIndex = option
         
         if (option != 0) {
             RemotesHandler handler = new RemotesHandler() from repoComponents[option].mainComponent
             handler.setRemotes(remotes)
-            logger.info("$debugMSG call add remotes: $( je.jsonFromArray( handler.getRemotes() ) )")
-            repo.clearState() // clear remote state
+            cacheRepo.clearState() // clear remote state
             repoComponents[option].mainComponent.callInterface(
-                repo,
+                cacheRepo,
                 "libs.adaptation.AdaptationLyfecicle",
                 null,
                 AdaptationLyfecicle.[onLoadRemoteState()],
                 null
             )
-            logger.info("$debugMSG current state: $( je.jsonFromArray( repo.getPosts() ) )")
+            logger.info("$debugMSG current state: $( je.jsonFromArray( cacheRepo.getPosts() ) )")
         }
 
-        char stateAfterAdaptation[] = je.jsonFromArray(repo.getPosts())
+        char stateAfterAdaptation[] = je.jsonFromArray(cacheRepo.getPosts())
         logger.info("State after adaptation: $stateAfterAdaptation")
     }
 }

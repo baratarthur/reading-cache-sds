@@ -1,0 +1,4 @@
+interface MetricsStore {
+    void startProcess()
+    void finishProcess()
+}

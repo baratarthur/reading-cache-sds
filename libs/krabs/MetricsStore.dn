@@ -1,0 +1,16 @@
+
+component provides MetricsStore {
+    static int requests_processed
+    static int requests_waiting
+    static int current_threads
+    static int average_execution_time
+    static int average_wait_time
+
+    void MetricsStore:startProcess() {
+
+    }
+
+    void MetricsStore:finishProcess() {
+
+    }
+}

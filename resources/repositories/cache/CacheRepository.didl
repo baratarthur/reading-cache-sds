@@ -1,12 +1,11 @@
 {
-    "name": "post-repository",
-    "allows": [" RS ", " RW ", " FS ", " FW "],
+    "name": "cache-repository",
     "dependencies": [
         { "lib": "time.Timer", "alias": "timer" },
         { "lib": "libs.utils.PostsUtils", "alias": "pu" }
     ],
     "attributes": {
-        "readingCache": { "onTransfer": "setPosts", "onLoad": "getPosts" }
+        "cache": { "onTransfer": "setPosts", "onLoad": "getPosts" }
     },
     "methods": {
         "getPosts": {
@@ -18,11 +17,6 @@
             "balance": "posts",
             "hashkey": "id"
         },
-        "getPostById": {
-            "returnParser": "je.jsonToData({}, typeof(Post))",
-            "remoteReturnParser": "je.jsonFromData({})",
-            "hashkey": "postId"
-        },
         "addPostInCache": {
             "hashkey": "cachePost.id"
         },
@@ -30,11 +24,6 @@
             "returnParser": "je.jsonToData({}, typeof(Post))",
             "remoteReturnParser": "je.jsonFromData({})",
             "hashkey": "postId"
-        },
-        "getUserFeed": {
-            "returnParser": "je.jsonToArray({}, typeof(Post[]))",
-            "remoteReturnParser": "je.jsonFromArray({})",
-            "hashkey": "userId"
         }
     }
 }

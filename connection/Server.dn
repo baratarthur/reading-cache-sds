@@ -19,7 +19,7 @@ data LatencyCheckDTO {
 }
 
 component provides Server(Destructor) requires net.TCPSocket, net.TCPServerSocket, libs.utils.Logger logger, data.IntUtil iu,
-composition.Adapt adapter, composition.RecursiveLoader loader, repositories.posts.PostsRepository repo, repositories.cache.CacheRepository, libs.network.http.HTTPUtil httpUtil,
+composition.Adapt adapter, composition.RecursiveLoader loader, repositories.posts.PostsRepository, repositories.cache.CacheRepository, libs.network.http.HTTPUtil httpUtil,
 data.StringUtil su, data.json.JSONEncoder je, data.json.JSONParser jsonParser, time.Calendar ic, libs.krabs.LatencyStore ls, libs.krabs.RemotesHandler,
 libs.adaptation.AdaptationLyfecicle {
     CacheRepository cacheRepo
@@ -101,6 +101,7 @@ libs.adaptation.AdaptationLyfecicle {
 
     HTTPResponse processGetRequests(HTTPMessage req) {
         char responseContent[] = new char[]()
+        PostsRepository repo = new PostsRepository()
 
         if (req.resource == "/") {
             responseContent = "Hello!"
@@ -150,6 +151,7 @@ libs.adaptation.AdaptationLyfecicle {
 
     HTTPResponse processPostRequests(HTTPMessage req) {
         char responseContent[] = new char[]()
+        PostsRepository repo = new PostsRepository()
 
         if (req.resource == "/post") {
             char body[] = new char[](req.postData)

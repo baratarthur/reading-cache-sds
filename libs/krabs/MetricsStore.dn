@@ -2,7 +2,7 @@
 const char TAG[] = "[@MetricsStore] - "
 
 component provides MetricsStore requires libs.utils.Logger logger, data.IntUtil iu, time.Timer timer, data.json.JSONEncoder je,
-time.Calendar ic, time.TimeUnix timeUnix {
+time.Calendar ic, time.TimeUnix timeUnix, repositories.cache.CacheRepository cache {
     static RequestMetric requests[] = new RequestMetric[]()
 
     static bool measure = false
@@ -36,10 +36,12 @@ time.Calendar ic, time.TimeUnix timeUnix {
             dec waitingBeforeDatabase = waitingBeforeDatabase()
             dec waitingBeforeUpdate = waitingBeforeCacheUpdate()
             dec totalLatency = totalLatency()
+            int cacheSize = cache.getPosts().arrayLength
 
             char log[] = new char[](
                 TAG,
                 "{",
+                "\"cache_size\": \"$(iu.makeString(cacheSize))\",",
                 "\"cache_lookup\": \"$(iu.makeString(cacheLookup))\",",
                 "\"database_service\": \"$(iu.makeString(databaseService))\",",
                 "\"cache_update\": \"$(iu.makeString(cacheUpdate))\",",

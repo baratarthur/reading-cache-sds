@@ -2,9 +2,9 @@
 const char TAG[] = "[@MetricsStore] - "
 
 component provides MetricsStore requires libs.utils.Logger logger, data.IntUtil iu, time.Timer timer, data.json.JSONEncoder je,
-time.Calendar ic, time.TimeUnix timeUnix, repositories.cache.CacheRepository cache {
+time.Calendar ic, time.TimeUnix timeUnix {
     static RequestMetric requests[] = new RequestMetric[]()
-
+    static int cacheSize
     static bool measure = false
 
     static int deliveredThreadId = 0
@@ -36,7 +36,6 @@ time.Calendar ic, time.TimeUnix timeUnix, repositories.cache.CacheRepository cac
             dec waitingBeforeDatabase = waitingBeforeDatabase()
             dec waitingBeforeUpdate = waitingBeforeCacheUpdate()
             dec totalLatency = totalLatency()
-            int cacheSize = cache.getPosts().arrayLength
 
             char log[] = new char[](
                 TAG,
@@ -159,7 +158,8 @@ time.Calendar ic, time.TimeUnix timeUnix, repositories.cache.CacheRepository cac
         requests = new RequestMetric[](requests, rm)
     }
 
-    void MetricsStore:tickMetric(store int threadId, char metric[]) {
+    void MetricsStore:tickMetric(store int threadId, char metric[], opt int incomingCacheSize) {
+        if (isset incomingCacheSize) cacheSize = incomingCacheSize
         DateTime currentTime = ic.getTime()
         int currentMillisecs = (timeUnix.toUnixTime(currentTime)*1000) + currentTime.millisecond
         for(int i = 0; i < requests.arrayLength; i++) {

@@ -16,7 +16,7 @@ libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je, 
     }
     
     Post CacheRepository:getPostByIdFromCache(store int postId, int threadId) {
-        ms.tickMetric(threadId, "cacheLookupTime")
+        ms.tickMetric(threadId, "cacheLookupTime", cache.arrayLength)
         
         for (int i = 0; i < cache.arrayLength; i++) {
             if (cache[i].id == postId) {

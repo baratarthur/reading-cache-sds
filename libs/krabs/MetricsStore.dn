@@ -31,18 +31,18 @@ time.Calendar ic, time.TimeUnix timeUnix {
             if (!measure) break
             dec waitingTime = avarageWaitingTime()
             dec processingTime = avarageProcessingTime()
-            // char log[] = new char[](
-            //     TAG,
-            //     "{",
-            //     "\"avarage_processing_time\": \"$(iu.makeString(processingTime))\",",
-            //     "\"avarage_waiting_time\": \"$(iu.makeString(waitingTime))\"",
-            //     "}"
-            // )
+            char log[] = new char[](
+                TAG,
+                "{",
+                "\"avarage_processing_time\": \"$(iu.makeString(processingTime))\",",
+                "\"avarage_waiting_time\": \"$(iu.makeString(waitingTime))\"",
+                "}"
+            )
             // char log[] = new char[](
             //     TAG,
             //     je.jsonFromArray(requests)
             // )
-            // logger.storeInfo(log)
+            logger.storeInfo(log)
             timer.sleep(1000)
         }
     }
@@ -83,10 +83,8 @@ time.Calendar ic, time.TimeUnix timeUnix {
     void MetricsStore:tickWaitingTime(store int threadId) {
         DateTime currentTime = ic.getTime()
         int currentMillisecs = (timeUnix.toUnixTime(currentTime)*1000) + currentTime.millisecond
-        logger.storeInfo("searching fot threadId: $(iu.makeString(threadId)), in array length: $(iu.makeString(requests.arrayLength))")
         for(int i = 0; i < requests.arrayLength; i++) {
             if (requests[i].id == threadId) {
-                logger.storeInfo("request exists")
                 requests[i].executionStart = currentMillisecs
                 break
             }

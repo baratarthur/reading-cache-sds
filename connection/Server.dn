@@ -19,7 +19,7 @@ data LatencyCheckDTO {
 }
 
 component provides Server(Destructor) requires net.TCPSocket, net.TCPServerSocket, libs.utils.Logger logger, data.IntUtil iu,
-composition.Adapt adapter, composition.RecursiveLoader loader, repositories.posts.PostsRepository, repositories.cache.CacheRepository, libs.network.http.HTTPUtil httpUtil,
+composition.Adapt adapter, composition.RecursiveLoader loader, repositories.posts.PostsRepository, repositories.cache.CacheRepository integratedCacheRepo, libs.network.http.HTTPUtil httpUtil,
 data.StringUtil su, data.json.JSONEncoder je, data.json.JSONParser jsonParser, time.Calendar ic, libs.krabs.LatencyStore ls, libs.krabs.RemotesHandler,
 libs.adaptation.AdaptationLyfecicle, libs.krabs.MetricsStore ms, time.TimeUnix timeUnix {
     CacheRepository cacheRepo
@@ -121,7 +121,7 @@ libs.adaptation.AdaptationLyfecicle, libs.krabs.MetricsStore ms, time.TimeUnix t
         } else if (req.resource == "/all") {
             // int page = httpUtil.getQueryStringValue(req.queryString, "page").string.intFromString()
             // int pageSize = httpUtil.getQueryStringValue(req.queryString, "pageSize").string.intFromString()
-            Post allPosts[] = cacheRepo.getPosts()
+            Post allPosts[] = integratedCacheRepo.getPosts()
             responseContent = je.jsonFromArray(allPosts)
             return build200(req, responseContent)
         } else if (su.startsWith(req.resource, "/feed/")) {
@@ -134,7 +134,7 @@ libs.adaptation.AdaptationLyfecicle, libs.krabs.MetricsStore ms, time.TimeUnix t
         } else if (su.startsWith(req.resource, "/post/")) {
             String pathInfo[] = su.explode(req.resource, "/") // expected: ["post", "<postId:number>"]
             int postId = pathInfo[1].string.intFromString()
-            Post post = cacheRepo.getPostByIdFromCache(postId, threadId) // stateful
+            Post post = integratedCacheRepo.getPostByIdFromCache(postId, threadId) // stateful
             if(post != null) {
                 char postStr[] = je.jsonFromData(post)
                 logger.info("post $(iu.makeString(postId)) found in cache!")
@@ -143,7 +143,7 @@ libs.adaptation.AdaptationLyfecicle, libs.krabs.MetricsStore ms, time.TimeUnix t
                 post = repo.getPostById(postId, threadId) // stateless
                 char postStr[] = je.jsonFromData(post)
                 logger.info("post $(iu.makeString(postId)) loaded from database!")
-                cacheRepo.addPostInCache(post, threadId) // stateful
+                integratedCacheRepo.addPostInCache(post, threadId) // stateful
             }
             responseContent = je.jsonFromData(post)
             return build200(req, responseContent)

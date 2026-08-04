@@ -38,11 +38,11 @@ time.Calendar ic, time.TimeUnix timeUnix {
             //     "\"avarage_waiting_time\": \"$(iu.makeString(waitingTime))\"",
             //     "}"
             // )
-            char log[] = new char[](
-                TAG,
-                je.jsonFromArray(requests)
-            )
-            logger.storeInfo(log)
+            // char log[] = new char[](
+            //     TAG,
+            //     je.jsonFromArray(requests)
+            // )
+            // logger.storeInfo(log)
             timer.sleep(1000)
         }
     }
@@ -81,6 +81,7 @@ time.Calendar ic, time.TimeUnix timeUnix {
     }
 
     void MetricsStore:tickWaitingTime(store int threadId) {
+        logger.storeInfo("tick waiting time")
         DateTime currentTime = ic.getTime()
         int currentMillisecs = (timeUnix.toUnixTime(currentTime)*1000) + currentTime.millisecond
         for(int i = 0; i < requests.arrayLength; i++) {

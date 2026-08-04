@@ -29,13 +29,24 @@ time.Calendar ic, time.TimeUnix timeUnix {
     void measureEachSecond() {
         while(true) {
             if (!measure) break
-            dec waitingTime = avarageWaitingTime()
-            dec processingTime = avarageProcessingTime()
+            dec cacheLookup = cacheLookupTime()
+            dec databaseService = databaseServiceTime()
+            dec cacheUpdate = cacheUpdateTime()
+            dec waitingBeforeLookup = waitingBeforeCacheLookup()
+            dec waitingBeforeDatabase = waitingBeforeDatabase()
+            dec waitingBeforeUpdate = waitingBeforeCacheUpdate()
+            dec totalLatency = totalLatency()
+
             char log[] = new char[](
                 TAG,
                 "{",
-                "\"avarage_processing_time\": \"$(iu.makeString(processingTime))\",",
-                "\"avarage_waiting_time\": \"$(iu.makeString(waitingTime))\"",
+                "\"cache_lookup\": \"$(iu.makeString(cacheLookup))\",",
+                "\"database_service\": \"$(iu.makeString(databaseService))\",",
+                "\"cache_update\": \"$(iu.makeString(cacheUpdate))\",",
+                "\"waiting_before_lookup\": \"$(iu.makeString(waitingBeforeLookup))\",",
+                "\"waiting_before_database\": \"$(iu.makeString(waitingBeforeDatabase))\",",
+                "\"waiting_before_update\": \"$(iu.makeString(waitingBeforeUpdate))\",",
+                "\"total_latency\": \"$(iu.makeString(totalLatency))\"",
                 "}"
             )
             // char log[] = new char[](
@@ -47,30 +58,96 @@ time.Calendar ic, time.TimeUnix timeUnix {
         }
     }
 
-    dec avarageWaitingTime() {
-        int amountOfWaiting = 0
+    dec cacheLookupTime() {
+        int metricAcc = 0
         int validMetrics = 0
         for(int i = 0; i < requests.arrayLength; i++) {
-            if(requests[i].arrivalTime !=0 && requests[i].executionStart !=0) {
-                amountOfWaiting += (requests[i].executionStart - requests[i].arrivalTime)
+            if(requests[i].cacheLookupEndTime !=0 && requests[i].cacheLookupTime !=0) {
+                metricAcc += (requests[i].cacheLookupEndTime - requests[i].cacheLookupTime)
                 validMetrics++
             }
         }
         if (validMetrics == 0) return 0
-        return amountOfWaiting / validMetrics
+        return metricAcc / validMetrics
     }
 
-    dec avarageProcessingTime() {
-        int amountIncomingRequests = 0
+    dec databaseServiceTime() {
+        int metricAcc = 0
         int validMetrics = 0
         for(int i = 0; i < requests.arrayLength; i++) {
-            if(requests[i].executionEnd !=0 && requests[i].executionStart !=0) {
-                amountIncomingRequests += (requests[i].executionEnd - requests[i].executionStart)
+            if(requests[i].databaseRequestEndTime !=0 && requests[i].databaseRequestStartTime !=0) {
+                metricAcc += (requests[i].databaseRequestEndTime - requests[i].databaseRequestStartTime)
                 validMetrics++
             }
         }
         if (validMetrics == 0) return 0
-        return amountIncomingRequests / validMetrics
+        return metricAcc / validMetrics
+    }
+
+    dec cacheUpdateTime() {
+        int metricAcc = 0
+        int validMetrics = 0
+        for(int i = 0; i < requests.arrayLength; i++) {
+            if(requests[i].cacheUpdateEndTime !=0 && requests[i].cacheUpdateStartTime !=0) {
+                metricAcc += (requests[i].cacheUpdateEndTime - requests[i].cacheUpdateStartTime)
+                validMetrics++
+            }
+        }
+        if (validMetrics == 0) return 0
+        return metricAcc / validMetrics
+    }
+
+    dec waitingBeforeCacheLookup() {
+        int metricAcc = 0
+        int validMetrics = 0
+        for(int i = 0; i < requests.arrayLength; i++) {
+            if(requests[i].cacheLookupTime !=0 && requests[i].arrivalTime !=0) {
+                metricAcc += (requests[i].cacheLookupTime - requests[i].arrivalTime)
+                validMetrics++
+            }
+        }
+        if (validMetrics == 0) return 0
+        return metricAcc / validMetrics
+    }
+
+
+    dec waitingBeforeDatabase() {
+        int metricAcc = 0
+        int validMetrics = 0
+        for(int i = 0; i < requests.arrayLength; i++) {
+            if(requests[i].databaseRequestStartTime !=0 && requests[i].cacheLookupEndTime !=0) {
+                metricAcc += (requests[i].databaseRequestStartTime - requests[i].cacheLookupEndTime)
+                validMetrics++
+            }
+        }
+        if (validMetrics == 0) return 0
+        return metricAcc / validMetrics
+    }
+
+    dec waitingBeforeCacheUpdate() {
+        int metricAcc = 0
+        int validMetrics = 0
+        for(int i = 0; i < requests.arrayLength; i++) {
+            if(requests[i].cacheUpdateStartTime !=0 && requests[i].databaseRequestEndTime !=0) {
+                metricAcc += (requests[i].cacheUpdateStartTime - requests[i].databaseRequestEndTime)
+                validMetrics++
+            }
+        }
+        if (validMetrics == 0) return 0
+        return metricAcc / validMetrics
+    }
+
+    dec totalLatency() {
+        int metricAcc = 0
+        int validMetrics = 0
+        for(int i = 0; i < requests.arrayLength; i++) {
+            if(requests[i].executionEnd !=0 && requests[i].arrivalTime !=0) {
+                metricAcc += (requests[i].executionEnd - requests[i].arrivalTime)
+                validMetrics++
+            }
+        }
+        if (validMetrics == 0) return 0
+        return metricAcc / validMetrics
     }
 
     void MetricsStore:startProcess(store int threadId) {
@@ -80,25 +157,32 @@ time.Calendar ic, time.TimeUnix timeUnix {
         requests = new RequestMetric[](requests, rm)
     }
 
-    void MetricsStore:tickWaitingTime(store int threadId) {
+    void MetricsStore:tickMetric(store int threadId, char metric[]) {
         DateTime currentTime = ic.getTime()
         int currentMillisecs = (timeUnix.toUnixTime(currentTime)*1000) + currentTime.millisecond
         for(int i = 0; i < requests.arrayLength; i++) {
             if (requests[i].id == threadId) {
-                requests[i].executionStart = currentMillisecs
+                switchChangeMetric(requests[i], metric, currentMillisecs)
                 break
             }
         }
     }
 
-    void MetricsStore:tickEndTime(store int threadId) {
-        DateTime currentTime = ic.getTime()
-        int currentMillisecs = (timeUnix.toUnixTime(currentTime)*1000) + currentTime.millisecond
-        for(int i = 0; i < requests.arrayLength; i++) {
-            if (requests[i].id == threadId) {
-                requests[i].executionEnd = currentMillisecs
-                break
-            }
+    void switchChangeMetric(RequestMetric rm, char metric[], int currentMillisecs) {
+        if (metric == "cacheLookupTime") {
+            rm.cacheLookupTime = currentMillisecs
+        } else if (metric == "cacheLookupEndTime") {
+            rm.cacheLookupEndTime = currentMillisecs
+        } else if (metric == "databaseRequestStartTime") {
+            rm.databaseRequestStartTime = currentMillisecs
+        } else if (metric == "databaseRequestEndTime") {
+            rm.databaseRequestEndTime = currentMillisecs
+        } else if (metric == "cacheUpdateStartTime") {
+            rm.cacheUpdateStartTime = currentMillisecs
+        } else if (metric == "cacheUpdateEndTime") {
+            rm.cacheUpdateEndTime = currentMillisecs
+        } else if (metric == "executionEnd") {
+            rm.executionEnd = currentMillisecs
         }
     }
 }

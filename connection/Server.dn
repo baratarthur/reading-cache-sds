@@ -84,7 +84,7 @@ libs.adaptation.AdaptationLyfecicle, libs.krabs.MetricsStore ms, time.TimeUnix t
         res = process(msg, threadId)
         if (res != null) sendResponse(msg, res)
         else sendResponse(msg, build404(msg))
-        ms.tickEndTime(threadId)
+        ms.tickMetric(threadId, "executionEnd")
         s.disconnect()
     }
 

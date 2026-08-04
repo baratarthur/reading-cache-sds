@@ -14,21 +14,21 @@ libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je, 
         char query[] = "INSERT INTO posts (userId, content) VALUES ($(iu.makeString(newPost.userId)), '$(newPost.content)');"
         MySQL conn = createNewConnection()
         
-        // ms.tickWaitingTime(threadId)
-        
+        ms.tickMetric(threadId, "databaseRequestStartTime")
         if(!conn.execute(query)) logger.storeError("Failed to write post in database")
         conn.close()
+        ms.tickMetric(threadId, "databaseRequestEndTime")
     }
 
     Post PostsRepository:getPostById(store int postId, int threadId) {
         char query[] = "SELECT * FROM posts WHERE id = $(iu.makeString(postId)) LIMIT 1;"
         MySQL conn = createNewConnection()
 
-        // ms.tickWaitingTime(threadId)
-        
+        ms.tickMetric(threadId, "databaseRequestStartTime")
         if(!conn.execute(query)) throw new Exception("Failed to fetch post from database")
         MySQLRow result[] = conn.fetchAll()
         conn.close()
+        ms.tickMetric(threadId, "databaseRequestEndTime")
 
         if (result.arrayLength > 0) {
             Post post = pu.getPostFromMYSQLRow(result[0])
@@ -41,8 +41,7 @@ libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je, 
         char query[] = "SELECT id, userId, likes, content, created_at FROM posts WHERE userId <> $(iu.makeString(userId)) ORDER BY created_at DESC LIMIT $(iu.makeString(PAGINATION_SIZE));"
         MySQL conn = createNewConnection()
         
-        // ms.tickWaitingTime(threadId)
-
+        ms.tickMetric(threadId, "databaseRequestStartTime")
         if(!conn.execute(query)) throw new Exception("Failed to fetch post from database")
         MySQLRow result[] = conn.fetchAll()
         conn.close()
@@ -54,6 +53,8 @@ libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je, 
                 userPosts = new Post[](userPosts, post)
             }
         }
+
+        ms.tickMetric(threadId, "databaseRequestEndTime")
 
         return userPosts
     }

@@ -1,15 +1,19 @@
 data RequestMetric {
     int id
     int arrivalTime
-    int executionStart
+    int cacheLookupTime
+    int cacheLookupEndTime
+    int databaseRequestStartTime
+    int databaseRequestEndTime
+    int cacheUpdateStartTime
+    int cacheUpdateEndTime
     int executionEnd
 }
 
 interface MetricsStore {
     int getId()
     void startProcess(store int threadId)
-    void tickWaitingTime(store int threadId)
-    void tickEndTime(store int threadId)
+    void tickMetric(store int threadId, char metric[])
     void startCycleMeasurement()
     void finishCycleMeasurement()
 }

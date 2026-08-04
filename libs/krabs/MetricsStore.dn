@@ -43,6 +43,7 @@ component provides MetricsStore requires libs.utils.Logger logger, data.IntUtil 
                 validMetrics++
             }
         }
+        if (validMetrics == 0) return 0
         return amountOfWaiting / validMetrics
     }
 
@@ -55,6 +56,7 @@ component provides MetricsStore requires libs.utils.Logger logger, data.IntUtil 
                 validMetrics++
             }
         }
+        if (validMetrics == 0) return 0
         return amountIncomingRequests / validMetrics
     }
 

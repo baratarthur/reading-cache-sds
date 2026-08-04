@@ -47,7 +47,7 @@ component provides MetricsStore requires libs.utils.Logger logger, data.IntUtil 
         for(int i = 0; i < requests.arrayLength; i++) {
             if(requests[i].executionEnd == 0 && requests[i].executionStart == 0) amountIncomingRequests++
         }
-        return amountOfWaiting
+        return amountIncomingRequests
     }
 
     void MetricsStore:startProcess(store RequestMetric rm) {

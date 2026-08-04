@@ -18,10 +18,12 @@ data LatencyCheckDTO {
     dec latency
 }
 
+const int INVALID_DATE = (-1*1)
+
 component provides Server(Destructor) requires net.TCPSocket, net.TCPServerSocket, libs.utils.Logger logger, data.IntUtil iu,
 composition.Adapt adapter, composition.RecursiveLoader loader, repositories.posts.PostsRepository, repositories.cache.CacheRepository, libs.network.http.HTTPUtil httpUtil,
 data.StringUtil su, data.json.JSONEncoder je, data.json.JSONParser jsonParser, time.Calendar ic, libs.krabs.LatencyStore ls, libs.krabs.RemotesHandler,
-libs.adaptation.AdaptationLyfecicle, libs.krabs.MetricsStore ms {
+libs.adaptation.AdaptationLyfecicle, libs.krabs.MetricsStore ms, time.TimeUnix timeUnix {
     CacheRepository cacheRepo
     LoadedComponents repoComponents[] = new LoadedComponents[](
         loader.load("repositories/cache/CacheRepository.o"),
@@ -66,7 +68,13 @@ libs.adaptation.AdaptationLyfecicle, libs.krabs.MetricsStore ms {
 		logger.storeInfo("$debugMSG Server started on port $(iu.makeString(PORT))")
 		while (serviceStatus) {
 			TCPSocket client = new TCPSocket()
-			if (client.accept(host)) asynch::handleRequest(client)
+			if (client.accept(host)) {
+                DateTime initTime = ic.getTime()
+                int startUnix = (timeUnix.toUnixTime(initTime)*1000) + initTime.millisecond
+                RequestMetric rm = new RequestMetric(startUnix, INVALID_DATE, INVALID_DATE)
+                ms.startProcess(rm)
+                asynch::handleRequest(client, rm)
+            }
 		}
     }
 
@@ -74,14 +82,18 @@ libs.adaptation.AdaptationLyfecicle, libs.krabs.MetricsStore ms {
         cacheRepo = new CacheRepository() from repoComponents[lastComponentIndex].mainComponent
     }
     
-    void Server:handleRequest(store TCPSocket s) {
-        ms.startProcess()
+    void Server:handleRequest(store TCPSocket s, store RequestMetric rm) {
         HTTPMessage msg = httpUtil.readHTTPRequest(s)
         HTTPResponse res = null
+        DateTime executionTime = ic.getTime()
+        int executionTimeUnix = (timeUnix.toUnixTime(executionTime)*1000) + executionTime.millisecond
+        rm.executionStart = executionTimeUnix
         res = process(msg)
         if (res != null) sendResponse(msg, res)
         else sendResponse(msg, build404(msg))
-        ms.finishProcess()
+        DateTime executionEnd = ic.getTime()
+        int executionEndUnix = (timeUnix.toUnixTime(executionEnd)*1000) + executionEnd.millisecond
+        rm.executionEnd = executionEndUnix
         s.disconnect()
     }
 
@@ -89,13 +101,11 @@ libs.adaptation.AdaptationLyfecicle, libs.krabs.MetricsStore ms {
         HTTPResponse res = null
         DateTime startExecutionTime = ic.getTime()
 
-        ms.startWaiting()
         if(req.command == "GET") {
             res = processGetRequests(req)
         } else if (req.command == "POST") {
             res = processPostRequests(req)
         }
-        ms.finishWaiting()
 
         int executionTimeInMs = ls.getMilisecondsExecutionTimeSince(startExecutionTime)
         ls.storeExecutionTime(executionTimeInMs, req)

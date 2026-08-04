@@ -1,18 +1,14 @@
 
 const char TAG[] = "[@MetricsStore] - "
 
+const int INVALID_DATE = (-1*1)
+
 component provides MetricsStore requires libs.utils.Logger logger, data.IntUtil iu, time.Timer timer {
-    static int requests
-    static int active_requests
-    static int completed
-    static int total_processing_time
+    static RequestMetric requests[] = new RequestMetric[]()
 
     static bool measure = false
 
     Mutex rLock = new Mutex()
-    Mutex aLock = new Mutex()
-    Mutex cLock = new Mutex()
-    Mutex tLock = new Mutex()
 
     void MetricsStore:startCycleMeasurement() {
         measure = true
@@ -26,12 +22,13 @@ component provides MetricsStore requires libs.utils.Logger logger, data.IntUtil 
     void measureEachSecond() {
         while(true) {
             if (!measure) break
+            int amountOfRequests = getAmountOfRequests()
+            int amountOfWaiting = getAmountOfWaiting()
             char log[] = new char[](
                 TAG,
                 "{",
-                "\"requests\": \"$(iu.makeString(requests))\",",
-                "\"active_requests\": \"$(iu.makeString(active_requests))\",",
-                "\"completed\": \"$(iu.makeString(completed))\"",
+                "\"requests\": \"$(iu.makeString(amountOfRequests))\",",
+                "\"active_requests\": \"$(iu.makeString(amountOfWaiting))\"",
                 "}"
             )
             logger.storeInfo(log)
@@ -39,33 +36,19 @@ component provides MetricsStore requires libs.utils.Logger logger, data.IntUtil 
         }
     }
 
-    void MetricsStore:startProcess() {
-        mutex(rLock) {
-            mutex(aLock) {
-                requests++
-                active_requests++
-            }
+    int getAmountOfWaiting() {
+        int amountOfWaiting = 0
+        for(int i = 0; i < requests.arrayLength; i++) {
+            if(requests[i].executionEnd == INVALID_DATE) amountOfWaiting++
         }
+        return amountOfWaiting
     }
 
-    void MetricsStore:startWaiting() {
-        mutex(aLock) {
-            active_requests--
-        }
+    int getAmountOfRequests() {
+        return requests.arrayLength
     }
 
-    void MetricsStore:finishWaiting() {
-        mutex(cLock) {
-            completed++
-        }
-    }
-
-    void MetricsStore:finishProcess() {
-        mutex(rLock) {
-            mutex(cLock) {
-                requests--
-                completed--
-            }
-        }
+    void MetricsStore:startProcess(store RequestMetric rm) {
+        requests = new RequestMetric[](requests, rm)
     }
 }

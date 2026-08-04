@@ -1,6 +1,7 @@
 uses net.TCPSocket
+uses libs.krabs.MetricsStore
 
 interface Server {
     void start(int PORT)
-    void handleRequest(store TCPSocket s)
+    void handleRequest(store TCPSocket s, store RequestMetric rm)
 }

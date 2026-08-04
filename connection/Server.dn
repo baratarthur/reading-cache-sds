@@ -132,7 +132,7 @@ libs.adaptation.AdaptationLyfecicle, libs.krabs.MetricsStore ms, time.TimeUnix t
             String pathInfo[] = su.explode(req.resource, "/") // expected: ["feed", "<userId:number>"]
             int userId = pathInfo[1].string.intFromString()
             Post userPosts[]
-            userPosts = repo.getUserFeed(userId, rm)
+            userPosts = repo.getUserFeed(userId, clone rm)
             responseContent = je.jsonFromArray(userPosts)
             return build200(req, responseContent)
         } else if (su.startsWith(req.resource, "/post/")) {
@@ -144,7 +144,7 @@ libs.adaptation.AdaptationLyfecicle, libs.krabs.MetricsStore ms, time.TimeUnix t
                 logger.info("post $(iu.makeString(postId)) found in cache!")
             }
             if(post == null) {
-                post = repo.getPostById(postId, rm) // stateless
+                post = repo.getPostById(postId, clone rm) // stateless
                 char postStr[] = je.jsonFromData(post)
                 logger.info("post $(iu.makeString(postId)) loaded from database!")
                 cacheRepo.addPostInCache(post) // stateful
@@ -168,7 +168,7 @@ libs.adaptation.AdaptationLyfecicle, libs.krabs.MetricsStore ms, time.TimeUnix t
             char body[] = new char[](req.postData)
             CreatePostDTO createPostDTO = je.jsonToData(body, typeof(CreatePostDTO))
             Post newPost = new Post(0, createPostDTO.userId, 0, createPostDTO.content, new DateTime())
-            repo.addPost(newPost, rm)
+            repo.addPost(newPost, clone rm)
             return build201(req, responseContent)
         } else if (su.startsWith(req.resource, "/adapt/")) {
             String pathInfo[] = su.explode(req.resource, "/") // expected: ["like", "<proxy:number>"]

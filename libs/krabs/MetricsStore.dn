@@ -1,8 +1,6 @@
 
 const char TAG[] = "[@MetricsStore] - "
 
-const int INVALID_DATE = (-1*1)
-
 component provides MetricsStore requires libs.utils.Logger logger, data.IntUtil iu, time.Timer timer, data.json.JSONEncoder je {
     static RequestMetric requests[] = new RequestMetric[]()
 
@@ -36,7 +34,7 @@ component provides MetricsStore requires libs.utils.Logger logger, data.IntUtil 
     int getAmountOfWaiting() {
         int amountOfWaiting = 0
         for(int i = 0; i < requests.arrayLength; i++) {
-            if(requests[i].executionEnd == INVALID_DATE) amountOfWaiting++
+            if(requests[i].executionEnd == 0) amountOfWaiting++
         }
         return amountOfWaiting
     }

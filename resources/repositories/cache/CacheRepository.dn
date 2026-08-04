@@ -7,18 +7,20 @@ data SetPostsParamsFormat {
 
 data AddPostInCacheParamsFormat {
     Post cachePost
+    int threadId
 }
 
 data GetPostByIdFromCacheParamsFormat {
     int postId
+    int threadId
 }
 
 interface CacheRepository {
     transfer Post cache[]
 
     void setPosts(store Post posts[])
-    void addPostInCache(store Post cachePost)
-    Post getPostByIdFromCache(store int postId)
+    void addPostInCache(store Post cachePost, int threadId)
+    Post getPostByIdFromCache(store int postId, int threadId)
     Post[] getPosts()
     void clearState()
 }

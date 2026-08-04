@@ -4,7 +4,7 @@ uses libs.utils.DatabaseConfig
 const char debugMSG[] = "[@CacheRepository]"
 
 component provides repositories.cache.CacheRepository requires time.TimeUnix timeUnix, time.Calendar ic, data.IntUtil iu,
-libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je, repositories.posts.PostsRepository {
+libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je, repositories.posts.PostsRepository, libs.krabs.MetricsStore ms {
     Mutex cacheLock = new Mutex()
 
     void CacheRepository:setPosts(store Post posts[]) {
@@ -15,38 +15,22 @@ libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je, 
         return cache
     }
     
-    Post CacheRepository:getPostByIdFromCache(store int postId) {
-        DateTime startExecutionTime = ic.getTime()
+    Post CacheRepository:getPostByIdFromCache(store int postId, int threadId) {
+        ms.tickWaitingTime(threadId)
+        
         for (int i = 0; i < cache.arrayLength; i++) {
             if (cache[i].id == postId) {
                 int ttlUnixInSeconds = timeUnix.toUnixTime(cache[i].ttl)
                 int nowUnixInSeconds = timeUnix.toUnixTime(ic.getTime())
-                if((nowUnixInSeconds - ttlUnixInSeconds) < 5 * 60) {
-                    int executionTime = ls.getMilisecondsExecutionTimeSince(startExecutionTime)
-                    char logMsg[] = new char[](
-                        debugMSG, " ",
-                        "post $(iu.makeString(postId)) found in cache: ",
-                        iu.makeString(executionTime),
-                        " ms"
-                    )
-                    // logger.storeInfo(logMsg)
-                    return cache[i]    
-                }
+                if((nowUnixInSeconds - ttlUnixInSeconds) < 5 * 60) return cache[i]    
             }
         }
 
-        int executionTime = ls.getMilisecondsExecutionTimeSince(startExecutionTime)
-        char logMsg[] = new char[](
-            debugMSG, " ",
-            "post $(iu.makeString(postId)) not in cache: ",
-            iu.makeString(executionTime),
-            " ms"
-        )
-        // logger.storeInfo(logMsg)
         return null
     }
 
-    void CacheRepository:addPostInCache(store Post cachePost) {
+    void CacheRepository:addPostInCache(store Post cachePost, int threadId) {
+        ms.tickWaitingTime(threadId)
         mutex(cacheLock) { cache = new Post[](cache, cachePost) }
     }
 

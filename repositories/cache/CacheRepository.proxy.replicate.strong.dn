@@ -31,15 +31,15 @@ component provides repositories.cache.CacheRepository(libs.adaptation.Adaptation
 			broadcast(req)
 		}
 
-		void CacheRepository:addPostInCache(store Post cachePost) {
-			AddPostInCacheParamsFormat params = new AddPostInCacheParamsFormat(cachePost)
+		void CacheRepository:addPostInCache(store Post cachePost, int threadId) {
+			AddPostInCacheParamsFormat params = new AddPostInCacheParamsFormat(cachePost, threadId)
 			char requestBody[] = je.jsonFromData(params)
 			Request req = new Request(buildMetaForMethod("addPostInCache"), requestBody)
 			anycast(req)
 		}
 
-		Post CacheRepository:getPostByIdFromCache(store int postId) {
-			GetPostByIdFromCacheParamsFormat params = new GetPostByIdFromCacheParamsFormat(postId)
+		Post CacheRepository:getPostByIdFromCache(store int postId, int threadId) {
+			GetPostByIdFromCacheParamsFormat params = new GetPostByIdFromCacheParamsFormat(postId, threadId)
 			char requestBody[] = je.jsonFromData(params)
 			Request req = new Request(buildMetaForMethod("getPostByIdFromCache"), requestBody)
 			Response res = anycast(req)

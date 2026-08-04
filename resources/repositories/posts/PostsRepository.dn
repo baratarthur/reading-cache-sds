@@ -10,7 +10,7 @@ data Post {
 }
 
 interface PostsRepository {
-    void addPost(store Post newPost, RequestMetric rm)
-    Post getPostById(store int postId, RequestMetric rm)
-    Post[] getUserFeed(store int userId, RequestMetric rm)
+    void addPost(store Post newPost, int threadId)
+    Post getPostById(store int postId, int threadId)
+    Post[] getUserFeed(store int userId, int threadId)
 }

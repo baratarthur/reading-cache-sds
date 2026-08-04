@@ -1,11 +1,15 @@
 data RequestMetric {
+    int id
     int arrivalTime
     int executionStart
     int executionEnd
 }
 
 interface MetricsStore {
-    void startProcess(store RequestMetric rm)
+    int getId()
+    void startProcess(store int threadId)
+    void tickWaitingTime(store int threadId)
+    void tickEndTime(store int threadId)
     void startCycleMeasurement()
     void finishCycleMeasurement()
 }

@@ -1,12 +1,14 @@
 
 const char TAG[] = "[@MetricsStore] - "
 
-component provides MetricsStore requires libs.utils.Logger logger, data.IntUtil iu, time.Timer timer, data.json.JSONEncoder je {
+component provides MetricsStore requires libs.utils.Logger logger, data.IntUtil iu, time.Timer timer, data.json.JSONEncoder je,
+time.Calendar ic, time.TimeUnix timeUnix {
     static RequestMetric requests[] = new RequestMetric[]()
 
     static bool measure = false
 
-    Mutex rLock = new Mutex()
+    static int deliveredThreadId = 0
+    Mutex idLock = new Mutex()
 
     void MetricsStore:startCycleMeasurement() {
         measure = true
@@ -15,6 +17,13 @@ component provides MetricsStore requires libs.utils.Logger logger, data.IntUtil 
 
     void MetricsStore:finishCycleMeasurement() {
         measure = false
+    }
+
+    int MetricsStore:getId() {
+        mutex(idLock) {
+            deliveredThreadId++
+        }
+        return deliveredThreadId
     }
 
     void measureEachSecond() {
@@ -60,7 +69,32 @@ component provides MetricsStore requires libs.utils.Logger logger, data.IntUtil 
         return amountIncomingRequests / validMetrics
     }
 
-    void MetricsStore:startProcess(store RequestMetric rm) {
+    void MetricsStore:startProcess(store int threadId) {
+        DateTime currentTime = ic.getTime()
+        int currentMillisecs = (timeUnix.toUnixTime(currentTime)*1000) + currentTime.millisecond
+        RequestMetric rm = new RequestMetric(id = threadId, arrivalTime = currentMillisecs)
         requests = new RequestMetric[](requests, rm)
+    }
+
+    void MetricsStore:tickWaitingTime(store int threadId) {
+        DateTime currentTime = ic.getTime()
+        int currentMillisecs = (timeUnix.toUnixTime(currentTime)*1000) + currentTime.millisecond
+        for(int i = 0; i < requests.arrayLength; i++) {
+            if (requests[i].id == threadId) {
+                requests[i].executionStart = currentMillisecs
+                break
+            }
+        }
+    }
+
+    void MetricsStore:tickEndTime(store int threadId) {
+        DateTime currentTime = ic.getTime()
+        int currentMillisecs = (timeUnix.toUnixTime(currentTime)*1000) + currentTime.millisecond
+        for(int i = 0; i < requests.arrayLength; i++) {
+            if (requests[i].id == threadId) {
+                requests[i].executionEnd = currentMillisecs
+                break
+            }
+        }
     }
 }

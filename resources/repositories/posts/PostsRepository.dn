@@ -1,4 +1,5 @@
 uses time.DateUtil
+uses libs.krabs.MetricsStore
 
 data Post {
     int id
@@ -9,7 +10,7 @@ data Post {
 }
 
 interface PostsRepository {
-    void addPost(store Post newPost)
-    Post getPostById(store int postId)
-    Post[] getUserFeed(store int userId)
+    void addPost(store Post newPost, store RequestMetric rm)
+    Post getPostById(store int postId, store RequestMetric rm)
+    Post[] getUserFeed(store int userId, store RequestMetric rm)
 }

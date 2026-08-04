@@ -5,45 +5,35 @@ const char debugMSG[] = "[@PostsRepository]"
 const int PAGINATION_SIZE = 5
 
 component provides repositories.posts.PostsRepository requires time.TimeUnix timeUnix, time.Calendar ic, data.IntUtil iu, data.mysql.MySQL,
-libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je, libs.utils.PostsUtils pu {
+libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je, libs.utils.PostsUtils pu, libs.krabs.MetricsStore {
     MySQL createNewConnection() {
         return new MySQL(DatabaseConfig.host, DatabaseConfig.port, DatabaseConfig.user, DatabaseConfig.password, DatabaseConfig.databaseName)
     }
 
-    void PostsRepository:addPost(store Post newPost) {
-        DateTime startExecutionTime = ic.getTime()
+    void PostsRepository:addPost(store Post newPost, store RequestMetric rm) {
         char query[] = "INSERT INTO posts (userId, content) VALUES ($(iu.makeString(newPost.userId)), '$(newPost.content)');"
         MySQL conn = createNewConnection()
+        
+        DateTime executionTime = ic.getTime()
+        int executionTimeUnix = (timeUnix.toUnixTime(executionTime)*1000) + executionTime.millisecond
+        rm.executionStart = executionTimeUnix
+        
         if(!conn.execute(query)) logger.storeError("Failed to write post in database")
         conn.close()
-        int executionTime = ls.getMilisecondsExecutionTimeSince(startExecutionTime)
-        char logMsg[] = new char[](
-            debugMSG, " ",
-            "add posts: ",
-            iu.makeString(executionTime),
-            " ms"
-        )
-        // logger.storeInfo(logMsg)
     }
 
-    Post PostsRepository:getPostById(store int postId) {
-        DateTime startExecutionTime = ic.getTime()
+    Post PostsRepository:getPostById(store int postId, store RequestMetric rm) {
         char query[] = "SELECT * FROM posts WHERE id = $(iu.makeString(postId)) LIMIT 1;"
-
         MySQL conn = createNewConnection()
+
+        DateTime executionTime = ic.getTime()
+        int executionTimeUnix = (timeUnix.toUnixTime(executionTime)*1000) + executionTime.millisecond
+        rm.executionStart = executionTimeUnix
+        
         if(!conn.execute(query)) throw new Exception("Failed to fetch post from database")
         MySQLRow result[] = conn.fetchAll()
         conn.close()
 
-
-        int executionTime = ls.getMilisecondsExecutionTimeSince(startExecutionTime)
-        char logMsg[] = new char[](
-            debugMSG, " ",
-            "post $(iu.makeString(postId)) recovered from DATABASE: ",
-            iu.makeString(executionTime),
-            " ms"
-        )
-        // logger.storeInfo(logMsg)
         if (result.arrayLength > 0) {
             Post post = pu.getPostFromMYSQLRow(result[0])
             return post
@@ -51,11 +41,14 @@ libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je, 
         return null
     }
 
-    Post[] PostsRepository:getUserFeed(store int userId) {
-        DateTime startExecutionTime = ic.getTime()
+    Post[] PostsRepository:getUserFeed(store int userId, store RequestMetric rm) {
         char query[] = "SELECT id, userId, likes, content, created_at FROM posts WHERE userId <> $(iu.makeString(userId)) ORDER BY created_at DESC LIMIT $(iu.makeString(PAGINATION_SIZE));"
-
         MySQL conn = createNewConnection()
+        
+        DateTime executionTime = ic.getTime()
+        int executionTimeUnix = (timeUnix.toUnixTime(executionTime)*1000) + executionTime.millisecond
+        rm.executionStart = executionTimeUnix
+
         if(!conn.execute(query)) throw new Exception("Failed to fetch post from database")
         MySQLRow result[] = conn.fetchAll()
         conn.close()
@@ -68,13 +61,6 @@ libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je, 
             }
         }
 
-        int executionTime = ls.getMilisecondsExecutionTimeSince(startExecutionTime)
-        char logMsg[] = new char[](
-            debugMSG, " ",
-            "get feed: ",
-            iu.makeString(executionTime)
-        )
-        // logger.storeInfo(logMsg)
         return userPosts
     }
 

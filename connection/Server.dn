@@ -83,10 +83,7 @@ libs.adaptation.AdaptationLyfecicle, libs.krabs.MetricsStore ms, time.TimeUnix t
     void Server:handleRequest(store TCPSocket s, store RequestMetric rm) {
         HTTPMessage msg = httpUtil.readHTTPRequest(s)
         HTTPResponse res = null
-        DateTime executionTime = ic.getTime()
-        int executionTimeUnix = (timeUnix.toUnixTime(executionTime)*1000) + executionTime.millisecond
-        rm.executionStart = executionTimeUnix
-        res = process(msg)
+        res = process(msg, rm)
         if (res != null) sendResponse(msg, res)
         else sendResponse(msg, build404(msg))
         DateTime executionEnd = ic.getTime()
@@ -95,10 +92,13 @@ libs.adaptation.AdaptationLyfecicle, libs.krabs.MetricsStore ms, time.TimeUnix t
         s.disconnect()
     }
 
-    HTTPResponse process(HTTPMessage req) {
+    HTTPResponse process(HTTPMessage req, store RequestMetric rm) {
         HTTPResponse res = null
         DateTime startExecutionTime = ic.getTime()
 
+        DateTime executionTime = ic.getTime()
+        int executionTimeUnix = (timeUnix.toUnixTime(executionTime)*1000) + executionTime.millisecond
+        rm.executionStart = executionTimeUnix
         if(req.command == "GET") {
             res = processGetRequests(req)
         } else if (req.command == "POST") {

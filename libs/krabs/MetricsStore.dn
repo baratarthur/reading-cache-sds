@@ -20,13 +20,13 @@ component provides MetricsStore requires libs.utils.Logger logger, data.IntUtil 
     void measureEachSecond() {
         while(true) {
             if (!measure) break
-            int amountOfRequests = getAmountOfRequests()
-            int amountOfWaiting = getAmountOfWaiting()
+            dec waitingTime = avarageWaitingTime()
+            dec processingTime = avarageProcessingTime()
             char log[] = new char[](
                 TAG,
                 "{",
-                "\"requests\": \"$(iu.makeString(amountOfRequests))\",",
-                "\"active_requests\": \"$(iu.makeString(amountOfWaiting))\"",
+                "\"avarage_processing_time\": \"$(iu.makeString(processingTime))\",",
+                "\"avarage_waiting_time\": \"$(iu.makeString(waitingTime))\"",
                 "}"
             )
             logger.storeInfo(log)
@@ -34,20 +34,28 @@ component provides MetricsStore requires libs.utils.Logger logger, data.IntUtil 
         }
     }
 
-    int getAmountOfWaiting() {
+    dec avarageWaitingTime() {
         int amountOfWaiting = 0
+        int validMetrics = 0
         for(int i = 0; i < requests.arrayLength; i++) {
-            if(requests[i].executionEnd == 0) amountOfWaiting++
+            if(requests[i].arrivalTime !=0 && requests[i].executionStart !=0) {
+                amountOfWaiting += (requests[i].executionStart - requests[i].arrivalTime)
+                validMetrics++
+            }
         }
-        return amountOfWaiting
+        return amountOfWaiting / validMetrics
     }
 
-    int getAmountOfRequests() {
+    dec avarageProcessingTime() {
         int amountIncomingRequests = 0
+        int validMetrics = 0
         for(int i = 0; i < requests.arrayLength; i++) {
-            if(requests[i].executionEnd == 0 && requests[i].executionStart == 0) amountIncomingRequests++
+            if(requests[i].executionEnd !=0 && requests[i].executionStart !=0) {
+                amountIncomingRequests += (requests[i].executionEnd - requests[i].executionStart)
+                validMetrics++
+            }
         }
-        return amountIncomingRequests
+        return amountIncomingRequests / validMetrics
     }
 
     void MetricsStore:startProcess(store RequestMetric rm) {

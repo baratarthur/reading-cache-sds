@@ -21,7 +21,7 @@ data LatencyCheckDTO {
 component provides Server(Destructor) requires net.TCPSocket, net.TCPServerSocket, libs.utils.Logger logger, data.IntUtil iu,
 composition.Adapt adapter, composition.RecursiveLoader loader, repositories.posts.PostsRepository, repositories.cache.CacheRepository, libs.network.http.HTTPUtil httpUtil,
 data.StringUtil su, data.json.JSONEncoder je, data.json.JSONParser jsonParser, time.Calendar ic, libs.krabs.LatencyStore ls, libs.krabs.RemotesHandler,
-libs.adaptation.AdaptationLyfecicle {
+libs.adaptation.AdaptationLyfecicle, libs.krabs.MetricsStore ms {
     CacheRepository cacheRepo
     LoadedComponents repoComponents[] = new LoadedComponents[](
         loader.load("repositories/cache/CacheRepository.o"),
@@ -75,11 +75,13 @@ libs.adaptation.AdaptationLyfecicle {
     }
     
     void Server:handleRequest(store TCPSocket s) {
+        ms.startProcess()
         HTTPMessage msg = httpUtil.readHTTPRequest(s)
         HTTPResponse res = null
         res = process(msg)
         if (res != null) sendResponse(msg, res)
         else sendResponse(msg, build404(msg))
+        ms.finishProcess()
         s.disconnect()
     }
 
@@ -87,11 +89,13 @@ libs.adaptation.AdaptationLyfecicle {
         HTTPResponse res = null
         DateTime startExecutionTime = ic.getTime()
 
+        ms.startWaiting()
         if(req.command == "GET") {
             res = processGetRequests(req)
         } else if (req.command == "POST") {
             res = processPostRequests(req)
         }
+        ms.finishWaiting()
 
         int executionTimeInMs = ls.getMilisecondsExecutionTimeSince(startExecutionTime)
         ls.storeExecutionTime(executionTimeInMs, req)
@@ -106,10 +110,12 @@ libs.adaptation.AdaptationLyfecicle {
         if (req.resource == "/") {
             responseContent = "Hello!"
             logger.storeInfo("[START] ======================\n")
+            ms.startCycleMeasurement()
             return build200(req, responseContent)
         } else if (req.resource == "/end") {
             responseContent = "Finish test!"
             logger.storeInfo("[END] =======================\n\n")
+            ms.finishCycleMeasurement()
             return build200(req, responseContent)
         } else if (req.resource == "/all") {
             // int page = httpUtil.getQueryStringValue(req.queryString, "page").string.intFromString()

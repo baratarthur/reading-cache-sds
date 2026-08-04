@@ -1,4 +1,8 @@
 interface MetricsStore {
     void startProcess()
     void finishProcess()
+    void startWaiting()
+    void finishWaiting()
+    void startCycleMeasurement()
+    void finishCycleMeasurement()
 }

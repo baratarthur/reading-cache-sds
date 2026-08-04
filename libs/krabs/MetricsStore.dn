@@ -31,12 +31,16 @@ time.Calendar ic, time.TimeUnix timeUnix {
             if (!measure) break
             dec waitingTime = avarageWaitingTime()
             dec processingTime = avarageProcessingTime()
+            // char log[] = new char[](
+            //     TAG,
+            //     "{",
+            //     "\"avarage_processing_time\": \"$(iu.makeString(processingTime))\",",
+            //     "\"avarage_waiting_time\": \"$(iu.makeString(waitingTime))\"",
+            //     "}"
+            // )
             char log[] = new char[](
                 TAG,
-                "{",
-                "\"avarage_processing_time\": \"$(iu.makeString(processingTime))\",",
-                "\"avarage_waiting_time\": \"$(iu.makeString(waitingTime))\"",
-                "}"
+                je.jsonFromArray(requests)
             )
             logger.storeInfo(log)
             timer.sleep(1000)

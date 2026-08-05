@@ -5,10 +5,20 @@ component provides MetricsStore requires libs.utils.Logger logger, data.IntUtil 
 time.Calendar ic, time.TimeUnix timeUnix {
     static RequestMetric requests[] = new RequestMetric[]()
     static int cacheSize
+    static int cacheHit
+    static int cacheMiss
     static bool measure = false
 
     static int deliveredThreadId = 0
     Mutex idLock = new Mutex()
+
+    void MetricsStore:hitCache() {
+        cacheHit++
+    }
+
+    void MetricsStore:missCache() {
+        cacheMiss++
+    }
 
     void MetricsStore:startCycleMeasurement() {
         measure = true
@@ -41,6 +51,8 @@ time.Calendar ic, time.TimeUnix timeUnix {
                 TAG,
                 "{",
                 "\"cache_size\": \"$(iu.makeString(cacheSize))\",",
+                "\"cacheHits\": \"$(iu.makeString(cacheHit))\",",
+                "\"cacheMiss\": \"$(iu.makeString(cacheMiss))\",",
                 "\"cache_lookup\": \"$(iu.makeString(cacheLookup))\",",
                 "\"database_service\": \"$(iu.makeString(databaseService))\",",
                 "\"cache_update\": \"$(iu.makeString(cacheUpdate))\",",

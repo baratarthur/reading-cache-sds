@@ -13,6 +13,8 @@ data RequestMetric {
 interface MetricsStore {
     int getId()
     void startProcess(store int threadId)
+    void hitCache()
+    void missCache()
     void tickMetric(store int threadId, char metric[], opt int cacheSize)
     void startCycleMeasurement()
     void finishCycleMeasurement()

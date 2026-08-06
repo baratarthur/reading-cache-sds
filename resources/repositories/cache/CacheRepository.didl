@@ -13,6 +13,21 @@
             "remoteReturnParser": "je.jsonFromArray({})",
             "onMerge": "pu.accumulate"
         },
+        "getNewPosts": {
+            "returnParser": "je.jsonToArray({}, typeof(Post[]))",
+            "remoteReturnParser": "je.jsonFromArray({})",
+            "onMerge": "pu.accumulate"
+        },
+        "removeNewPostsFromCache": {
+            "returnParser": "je.jsonToArray({}, typeof(Post[]))",
+            "remoteReturnParser": "je.jsonFromArray({})",
+            "onMerge": "pu.accumulate"
+        },
+        "getFeedFromCache": {
+            "returnParser": "je.jsonToArray({}, typeof(Post[]))",
+            "remoteReturnParser": "je.jsonFromArray({})",
+            "onMerge": "pu.accumulate"
+        },
         "setPosts": {
             "balance": "posts",
             "hashkey": "id"

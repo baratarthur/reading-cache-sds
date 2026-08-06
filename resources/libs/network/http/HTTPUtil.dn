@@ -35,6 +35,15 @@ data HTTPMessage {
 	TCPSocket socket
 }
 
+data HTTPResponse {
+    int code
+    char status[]
+    char serverName[]
+    int contentLength
+    char contentType[]
+    char body[]
+}
+
 interface HTTPUtil {
 	const char htdocs[] = "../repository/htdocs"
 	const int BUFF_SIZE = 1000
@@ -44,4 +53,8 @@ interface HTTPUtil {
 	HTTPMessage readHTTPRequest(store TCPSocket s)
 	HTTPMessage parseHTTPRequest(char buf[])
 	String getQueryStringValue(char resource[], char paramSearch[])
+	void sendResponse(HTTPMessage request, HTTPResponse response)
+	HTTPResponse build404(HTTPMessage request)
+	HTTPResponse build201(HTTPMessage request, char body[])
+	HTTPResponse build200(HTTPMessage request, char body[])
 }

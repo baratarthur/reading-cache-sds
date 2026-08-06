@@ -47,14 +47,29 @@ component provides remotes.Remote:cacherepository requires net.TCPSocket, net.TC
 
 		if(method == "addPostInCache") {
 			AddPostInCacheParamsFormat paramsData = je.jsonToData(req.content, typeof(AddPostInCacheParamsFormat))
-			remoteComponent.addPostInCache(paramsData.cachePost,paramsData.threadId)
+			remoteComponent.addPostInCache(paramsData.cachePost)
 			return connection.buildResponse("addPostInCache", "200")
 		}
 
 		if(method == "getPostByIdFromCache") {
 			GetPostByIdFromCacheParamsFormat paramsData = je.jsonToData(req.content, typeof(GetPostByIdFromCacheParamsFormat))
-			Post result = remoteComponent.getPostByIdFromCache(paramsData.postId,paramsData.threadId)
+			Post result = remoteComponent.getPostByIdFromCache(paramsData.postId)
 			return connection.buildResponseWithData("getPostByIdFromCache", "200", je.jsonFromData(result))
+		}
+
+		if(method == "getFeedFromCache") {
+			Post result[] = remoteComponent.getFeedFromCache()
+			return connection.buildResponseWithData("getFeedFromCache", "200", je.jsonFromArray(result))
+		}
+
+		if(method == "getNewPosts") {
+			Post result[] = remoteComponent.getNewPosts()
+			return connection.buildResponseWithData("getNewPosts", "200", je.jsonFromArray(result))
+		}
+
+		if(method == "removeNewPostsFromCache") {
+			Post result[] = remoteComponent.removeNewPostsFromCache()
+			return connection.buildResponseWithData("removeNewPostsFromCache", "200", je.jsonFromArray(result))
 		}
 
 		if(method == "getPosts") {

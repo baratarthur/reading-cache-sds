@@ -6,29 +6,21 @@ const int PAGINATION_SIZE = 5
 
 component provides repositories.posts.PostsRepository requires time.TimeUnix timeUnix, time.Calendar ic, data.IntUtil iu, data.mysql.MySQL,
 libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je, libs.utils.PostsUtils pu, libs.krabs.MetricsStore ms {
-    MySQL createNewConnection() {
-        return new MySQL(DatabaseConfig.host, DatabaseConfig.port, DatabaseConfig.user, DatabaseConfig.password, DatabaseConfig.databaseName)
-    }
-
-    void PostsRepository:addPost(store Post newPost, int threadId) {
-        char query[] = "INSERT INTO posts (userId, content) VALUES ($(iu.makeString(newPost.userId)), '$(newPost.content)');"
-        MySQL conn = createNewConnection()
+    void PostsRepository:addPosts(store Post newPosts[]) {
+        char query[] = "INSERT INTO posts (userId, content) VALUES "
         
-        ms.tickMetric(threadId, "databaseRequestStartTime")
-        if(!conn.execute(query)) logger.storeError("Failed to write post in database")
-        conn.close()
-        ms.tickMetric(threadId, "databaseRequestEndTime")
+        for(int i = 0; i < newPosts.arrayLength; i++) {
+            query = new char[](query, "($(iu.makeString(newPosts[i].userId)), '$(newPosts[i].content)')")
+            if(i < newPosts.arrayLength - 1) query = new char[](query, ",")
+        }
+        query = new char[](query, ";")
+        execQuery(query, 0)
     }
 
     Post PostsRepository:getPostById(store int postId, int threadId) {
         char query[] = "SELECT * FROM posts WHERE id = $(iu.makeString(postId)) LIMIT 1;"
-        MySQL conn = createNewConnection()
 
-        ms.tickMetric(threadId, "databaseRequestStartTime")
-        if(!conn.execute(query)) throw new Exception("Failed to fetch post from database")
-        MySQLRow result[] = conn.fetchAll()
-        conn.close()
-        ms.tickMetric(threadId, "databaseRequestEndTime")
+        MySQLRow result[] = execQuery(query, threadId)
 
         if (result.arrayLength > 0) {
             Post post = pu.getPostFromMYSQLRow(result[0])
@@ -39,12 +31,8 @@ libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je, 
 
     Post[] PostsRepository:getUserFeed(store int userId, int threadId) {
         char query[] = "SELECT id, userId, likes, content, created_at FROM posts WHERE userId <> $(iu.makeString(userId)) ORDER BY created_at DESC LIMIT $(iu.makeString(PAGINATION_SIZE));"
-        MySQL conn = createNewConnection()
-        
-        ms.tickMetric(threadId, "databaseRequestStartTime")
-        if(!conn.execute(query)) throw new Exception("Failed to fetch post from database")
-        MySQLRow result[] = conn.fetchAll()
-        conn.close()
+                
+        MySQLRow result[] = execQuery(query, threadId)
         Post userPosts[] = new Post[]()
 
         if (result.arrayLength > 0) {
@@ -54,9 +42,32 @@ libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je, 
             }
         }
 
-        ms.tickMetric(threadId, "databaseRequestEndTime")
-
         return userPosts
+    }
+
+    MySQLRow[] execQuery(char query[], int threadId) {
+        MySQLRow result[] = null
+
+        DateTime connectionStart = ic.getTime()
+        MySQL conn = createNewConnection()
+        int timeToConnect = ls.getMilisecondsExecutionTimeSince(connectionStart)
+        
+
+        DateTime executionStart = ic.getTime()
+        if(!conn.execute(query)) throw new Exception("Failed to fetch post from database")
+        result = conn.fetchAll()
+        conn.close()
+        int timeToExecute = ls.getMilisecondsExecutionTimeSince(executionStart)
+
+        logger.storeInfo(new char[](
+            debugMSG,
+            "{\"threadId\": \"$(iu.makeString(threadId))\",  \"connectionTime\": \"$(iu.makeString(timeToConnect))\", \"executionTime\": \"$(iu.makeString(timeToExecute))\"}"
+        ))
+        return result
+    }
+
+    MySQL createNewConnection() {
+        return new MySQL(DatabaseConfig.host, DatabaseConfig.port, DatabaseConfig.user, DatabaseConfig.password, DatabaseConfig.databaseName)
     }
 
 }

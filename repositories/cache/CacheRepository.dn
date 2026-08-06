@@ -4,7 +4,7 @@ uses libs.utils.DatabaseConfig
 const char debugMSG[] = "[@CacheRepository]"
 
 component provides repositories.cache.CacheRepository requires time.TimeUnix timeUnix, time.Calendar ic, data.IntUtil iu,
-libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je, repositories.posts.PostsRepository, libs.krabs.MetricsStore ms {
+libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je, repositories.posts.PostsRepository, util.Random random {
     Mutex cacheLock = new Mutex()
 
     void CacheRepository:setPosts(store Post posts[]) {
@@ -14,29 +14,60 @@ libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je, 
     Post[] CacheRepository:getPosts() {
         return cache
     }
+
+    Post[] CacheRepository:getNewPosts() {
+        Post newPosts[] = new Post[]()
+        
+        for(int i = 0; i < cache.arrayLength; i++) {
+            if(cache[i].id == 0) newPosts = new Post[](newPosts, cache[i])
+        }
+
+        return newPosts
+    }
+
+    Post[] CacheRepository:getFeedFromCache() {
+        Post feed[] = new Post[]()
+        
+        while(feed.arrayLength < 5) {
+            int i = random.getInt(cache.arrayLength)
+            if(cache[i].id == 0 && notIn(feed, i)) feed = new Post[](feed, cache[i])
+        }
+
+        return feed
+    }
+
+    bool notIn(Post array[], int id) {
+        for(int i = 0; i < array.arrayLength; i++) {
+            if(array[i].id == id) return false
+        }
+        return true
+    }
+
+    Post[] CacheRepository:removeNewPostsFromCache() {
+        Post newCache[] = new Post[]()
+        for(int i = 0; i < cache.arrayLength; i++) {
+            if(cache[i].id != 0) newCache = new Post[](newCache, cache[i])
+        }
+        cache = newCache
+        return cache
+    }
     
-    Post CacheRepository:getPostByIdFromCache(store int postId, int threadId) {
-        ms.tickMetric(threadId, "cacheLookupTime", cache.arrayLength)
+    Post CacheRepository:getPostByIdFromCache(store int postId) {
         Post cachedPost = null
         
         for (int i = 0; i < cache.arrayLength; i++) {
             if (cache[i].id == postId) {
                 int ttlUnixInSeconds = timeUnix.toUnixTime(cache[i].ttl)
                 int nowUnixInSeconds = timeUnix.toUnixTime(ic.getTime())
-                if((nowUnixInSeconds - ttlUnixInSeconds) < 5 * 60) {
-                    cachedPost = cache[i]
-                }
+                if((nowUnixInSeconds - ttlUnixInSeconds) < 5 * 60) cachedPost = cache[i]
             }
         }
 
-        ms.tickMetric(threadId, "cacheLookupEndTime")
         return cachedPost
     }
 
-    void CacheRepository:addPostInCache(store Post cachePost, int threadId) {
-        ms.tickMetric(threadId, "cacheUpdateStartTime")
+    void CacheRepository:addPostInCache(store Post cachePost) {
         mutex(cacheLock) { cache = new Post[](cache, cachePost) }
-        ms.tickMetric(threadId, "cacheUpdateEndTime")
     }
 
     void CacheRepository:clearState() {

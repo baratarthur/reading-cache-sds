@@ -31,19 +31,40 @@ component provides repositories.cache.CacheRepository(libs.adaptation.Adaptation
 			broadcast(req)
 		}
 
-		void CacheRepository:addPostInCache(store Post cachePost, int threadId) {
-			AddPostInCacheParamsFormat params = new AddPostInCacheParamsFormat(cachePost, threadId)
+		void CacheRepository:addPostInCache(store Post cachePost) {
+			AddPostInCacheParamsFormat params = new AddPostInCacheParamsFormat(cachePost)
 			char requestBody[] = je.jsonFromData(params)
 			Request req = new Request(buildMetaForMethod("addPostInCache"), requestBody)
 			anycast(req)
 		}
 
-		Post CacheRepository:getPostByIdFromCache(store int postId, int threadId) {
-			GetPostByIdFromCacheParamsFormat params = new GetPostByIdFromCacheParamsFormat(postId, threadId)
+		Post CacheRepository:getPostByIdFromCache(store int postId) {
+			GetPostByIdFromCacheParamsFormat params = new GetPostByIdFromCacheParamsFormat(postId)
 			char requestBody[] = je.jsonFromData(params)
 			Request req = new Request(buildMetaForMethod("getPostByIdFromCache"), requestBody)
 			Response res = anycast(req)
 			return je.jsonToData(res.content, typeof(Post))
+		}
+
+		Post[] CacheRepository:getFeedFromCache() {
+			char requestBody[] = ""
+			Request req = new Request(buildMetaForMethod("getFeedFromCache"), requestBody)
+			Response res = anycast(req)
+			return je.jsonToArray(res.content, typeof(Post[]))
+		}
+
+		Post[] CacheRepository:getNewPosts() {
+			char requestBody[] = ""
+			Request req = new Request(buildMetaForMethod("getNewPosts"), requestBody)
+			Response res = anycast(req)
+			return je.jsonToArray(res.content, typeof(Post[]))
+		}
+
+		Post[] CacheRepository:removeNewPostsFromCache() {
+			char requestBody[] = ""
+			Request req = new Request(buildMetaForMethod("removeNewPostsFromCache"), requestBody)
+			Response res = anycast(req)
+			return je.jsonToArray(res.content, typeof(Post[]))
 		}
 
 		Post[] CacheRepository:getPosts() {

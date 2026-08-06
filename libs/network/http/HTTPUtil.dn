@@ -204,4 +204,58 @@ component provides libs.network.http.HTTPUtil requires data.IntUtil iu, io.FileS
 		return new String("")
 	}
 
+	HTTPResponse HTTPUtil:build200(HTTPMessage request, char body[]) {
+        byte responseContentBytes[] = dana.serial(body)
+        return new HTTPResponse(
+            200,
+            "Accepted",
+            HTTPUtil.SERVER_NAME,
+            responseContentBytes.arrayLength,
+            request.mimeType,
+            body
+        )
+    }
+
+    HTTPResponse HTTPUtil:build201(HTTPMessage request, char body[]) {
+        byte responseContentBytes[] = dana.serial(body)
+        return new HTTPResponse(
+            201,
+            "Created",
+            HTTPUtil.SERVER_NAME,
+            responseContentBytes.arrayLength,
+            request.mimeType,
+            body
+        )
+    }
+
+    HTTPResponse HTTPUtil:build404(HTTPMessage request) {
+        return new HTTPResponse(
+            404,
+            "Not Found",
+            HTTPUtil.SERVER_NAME,
+            0,
+            request.mimeType,
+            ""
+        )
+    }
+    
+    void HTTPUtil:sendResponse(HTTPMessage request, HTTPResponse response) {
+        // logger.info("$debugMSG - RESPONSE CONTENT")
+        request.socket.send("HTTP/1.1 $(iu.makeString(response.code)) $(response.status)\r\n")
+        // logger.info("HTTP/1.1 $(iu.makeString(response.code)) $(response.status)\r\n")
+		request.socket.send("Server: $(response.serverName) \r\n")
+        // logger.info("Server: $(response.serverName) \r\n")
+		request.socket.send("Content-Length: $(iu.makeString(response.contentLength))\r\n")
+        // logger.info("Content-Length: $(iu.makeString(response.contentLength))\r\n")
+		request.socket.send("Connection: close\r\n")
+        // logger.info("Connection: close\r\n")
+		request.socket.send("Content-Type: $(response.contentType)\r\n")
+        // logger.info("Content-Type: $(response.contentType)\r\n")
+		request.socket.send("\r\n")
+        // logger.info("\r\n")
+		request.socket.send(response.body)
+        // logger.info(response.body)
+        // logger.info("$debugMSG - END RESPONSE CONTENT")
+    }
+
 }

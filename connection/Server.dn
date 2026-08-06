@@ -1,14 +1,5 @@
 const char debugMSG[] = "[Server] -"
 
-data HTTPResponse {
-    int code
-    char status[]
-    char serverName[]
-    int contentLength
-    char contentType[]
-    char body[]
-}
-
 data CreatePostDTO {
     int userId
     char content[]
@@ -18,10 +9,10 @@ data LatencyCheckDTO {
     dec latency
 }
 
-component provides Server(Destructor) requires net.TCPSocket, net.TCPServerSocket, libs.utils.Logger logger, data.IntUtil iu,
-composition.Adapt adapter, composition.RecursiveLoader loader, repositories.posts.PostsRepository, repositories.cache.CacheRepository integratedCacheRepo, libs.network.http.HTTPUtil httpUtil,
-data.StringUtil su, data.json.JSONEncoder je, data.json.JSONParser jsonParser, time.Calendar ic, libs.krabs.LatencyStore ls, libs.krabs.RemotesHandler,
-libs.adaptation.AdaptationLyfecicle, libs.krabs.MetricsStore ms, time.TimeUnix timeUnix {
+component provides Server(Destructor) requires net.TCPSocket, net.TCPServerSocket, libs.utils.Logger logger, data.IntUtil iu, composition.Adapt adapter,
+composition.RecursiveLoader loader, repositories.posts.PostsRepository, repositories.cache.CacheRepository, libs.network.http.HTTPUtil httpUtil, data.StringUtil su,
+data.json.JSONEncoder je, data.json.JSONParser jsonParser, time.Calendar ic, libs.krabs.LatencyStore ls, libs.krabs.RemotesHandler, libs.adaptation.AdaptationLyfecicle,
+libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer {
     CacheRepository cacheRepo
     LoadedComponents repoComponents[] = new LoadedComponents[](
         loader.load("repositories/cache/CacheRepository.o"),
@@ -46,6 +37,7 @@ libs.adaptation.AdaptationLyfecicle, libs.krabs.MetricsStore ms, time.TimeUnix t
     )
     int lastComponentIndex = 0
     bool serviceStatus = false
+    bool cacheSaveServiceRunTime = false
 
         
     void Destructor:destroy() {
@@ -82,8 +74,8 @@ libs.adaptation.AdaptationLyfecicle, libs.krabs.MetricsStore ms, time.TimeUnix t
         HTTPMessage msg = httpUtil.readHTTPRequest(s)
         HTTPResponse res = null
         res = process(msg, threadId)
-        if (res != null) sendResponse(msg, res)
-        else sendResponse(msg, build404(msg))
+        if (res != null) httpUtil.sendResponse(msg, res)
+        else httpUtil.sendResponse(msg, httpUtil.build404(msg))
         ms.tickMetric(threadId, "executionEnd")
         s.disconnect()
     }
@@ -92,11 +84,8 @@ libs.adaptation.AdaptationLyfecicle, libs.krabs.MetricsStore ms, time.TimeUnix t
         HTTPResponse res = null
         DateTime startExecutionTime = ic.getTime()
 
-        if(req.command == "GET") {
-            res = processGetRequests(req, threadId)
-        } else if (req.command == "POST") {
-            res = processPostRequests(req, threadId)
-        }
+        if(req.command == "GET") res = processGetRequests(req, threadId)
+        else if (req.command == "POST") res = processPostRequests(req, threadId)
 
         int executionTimeInMs = ls.getMilisecondsExecutionTimeSince(startExecutionTime)
         ls.storeExecutionTime(executionTimeInMs, req)
@@ -105,143 +94,136 @@ libs.adaptation.AdaptationLyfecicle, libs.krabs.MetricsStore ms, time.TimeUnix t
     }
 
     HTTPResponse processGetRequests(HTTPMessage req, store int threadId) {
-        char responseContent[] = new char[]()
-        PostsRepository repo = new PostsRepository()
-
-        if (req.resource == "/") {
-            responseContent = "Hello!"
-            logger.storeInfo("[START] ======================\n")
-            ms.startCycleMeasurement()
-            return build200(req, responseContent)
-        } else if (req.resource == "/end") {
-            responseContent = "Finish test!"
-            logger.storeInfo("[END] =======================\n\n")
-            ms.finishCycleMeasurement()
-            return build200(req, responseContent)
-        } else if (req.resource == "/all") {
-            // int page = httpUtil.getQueryStringValue(req.queryString, "page").string.intFromString()
-            // int pageSize = httpUtil.getQueryStringValue(req.queryString, "pageSize").string.intFromString()
-            Post allPosts[] = integratedCacheRepo.getPosts()
-            responseContent = je.jsonFromArray(allPosts)
-            return build200(req, responseContent)
-        } else if (su.startsWith(req.resource, "/feed/")) {
-            String pathInfo[] = su.explode(req.resource, "/") // expected: ["feed", "<userId:number>"]
-            int userId = pathInfo[1].string.intFromString()
-            Post userPosts[]
-            userPosts = repo.getUserFeed(userId, threadId)
-            responseContent = je.jsonFromArray(userPosts)
-            return build200(req, responseContent)
-        } else if (su.startsWith(req.resource, "/post/")) {
-            String pathInfo[] = su.explode(req.resource, "/") // expected: ["post", "<postId:number>"]
-            int postId = pathInfo[1].string.intFromString()
-            Post post = integratedCacheRepo.getPostByIdFromCache(postId, threadId) // stateful
-            if(post != null) {
-                ms.hitCache()
-                char postStr[] = je.jsonFromData(post)
-                logger.info("post $(iu.makeString(postId)) found in cache!")
-            }
-            if(post == null) {
-                ms.missCache()
-                post = repo.getPostById(postId, threadId) // stateless
-                char postStr[] = je.jsonFromData(post)
-                logger.info("post $(iu.makeString(postId)) loaded from database!")
-                integratedCacheRepo.addPostInCache(post, threadId) // stateful
-            }
-            responseContent = je.jsonFromData(post)
-            return build200(req, responseContent)
-        } else if (req.resource == "/current-latency") {
-            LatencyCheckDTO latencyCheckDTO = new LatencyCheckDTO(ls.getCurrentAverageLatency())
-            responseContent = je.jsonFromData(latencyCheckDTO)
-            return build200(req, responseContent)
-        }
+      
+        if (req.resource == "/") return getHello(req)
+        else if (req.resource == "/end") return getEnd(req)
+        else if (req.resource == "/all") return getAll(req, threadId)
+        else if (su.startsWith(req.resource, "/feed/")) return getFeed(req, threadId)
+        else if (su.startsWith(req.resource, "/post/")) return getPostById(req, threadId)
+        else if (req.resource == "/current-latency") return getCurrentRequestTime(req)
 
         return null
     }
+
+    HTTPResponse getHello(HTTPMessage req) {
+        char responseContent[] = "Hello!"
+        logger.storeInfo("[START] ======================\n")
+        ms.startCycleMeasurement()
+        return httpUtil.build200(req, responseContent)
+    }
+
+    HTTPResponse getEnd(HTTPMessage req) {
+        char responseContent[] = "Finish test!"
+        logger.storeInfo("[END] =======================\n\n")
+        ms.finishCycleMeasurement()
+        return httpUtil.build200(req, responseContent)
+    }
+
+    HTTPResponse getAll(HTTPMessage req, int threadId) {
+        // int page = httpUtil.getQueryStringValue(req.queryString, "page").string.intFromString()
+        // int pageSize = httpUtil.getQueryStringValue(req.queryString, "pageSize").string.intFromString()
+        ms.tickMetric(threadId, "cacheLookupTime")
+        Post allPosts[] = cacheRepo.getPosts()
+        ms.tickMetric(threadId, "cacheLookupEndTime")
+        char responseContent[] = je.jsonFromArray(allPosts)
+        return httpUtil.build200(req, responseContent)
+    }
+
+    HTTPResponse getFeed(HTTPMessage req, int threadId) {
+        PostsRepository repo = new PostsRepository()
+        String pathInfo[] = su.explode(req.resource, "/") // expected: ["feed", "<userId:number>"]
+        int userId = pathInfo[1].string.intFromString()
+        
+        Post userPosts[]
+        ms.tickMetric(threadId, "cacheLookupTime")
+        Post cachedPosts[] = cacheRepo.getFeedFromCache()
+        ms.tickMetric(threadId, "cacheLookupEndTime")
+        
+        if(cachedPosts.arrayLength > 4) {
+            ms.hitCache()
+            userPosts = cachedPosts
+        } else {
+            ms.missCache()
+            userPosts = repo.getUserFeed(userId, threadId)
+        }
+
+        char responseContent[] = je.jsonFromArray(userPosts)
+        return httpUtil.build200(req, responseContent)
+    }
+
+    HTTPResponse getPostById(HTTPMessage req, int threadId) {
+        PostsRepository repo = new PostsRepository()
+        String pathInfo[] = su.explode(req.resource, "/") // expected: ["post", "<postId:number>"]
+        int postId = pathInfo[1].string.intFromString()
+        
+        ms.tickMetric(threadId, "cacheLookupTime")
+        Post post = cacheRepo.getPostByIdFromCache(postId) // stateful
+        ms.tickMetric(threadId, "cacheLookupEndTime")
+        
+        if(post != null) {
+            ms.hitCache()
+            char postStr[] = je.jsonFromData(post)
+            logger.info("post $(iu.makeString(postId)) found in cache!")
+        }
+        
+        if(post == null) {
+            ms.missCache()
+            post = repo.getPostById(postId, threadId) // stateless
+            char postStr[] = je.jsonFromData(post)
+            logger.info("post $(iu.makeString(postId)) loaded from database!")
+            ms.tickMetric(threadId, "cacheUpdateStartTime")
+            cacheRepo.addPostInCache(post) // stateful
+            ms.tickMetric(threadId, "cacheUpdateEndTime")
+        }
+        
+        char responseContent[] = je.jsonFromData(post)
+        return httpUtil.build200(req, responseContent)
+    }
+
+    HTTPResponse getCurrentRequestTime(HTTPMessage req) {
+        LatencyCheckDTO latencyCheckDTO = new LatencyCheckDTO(ls.getCurrentAverageLatency())
+
+        char responseContent[] = je.jsonFromData(latencyCheckDTO)
+
+        return httpUtil.build200(req, responseContent)
+    }
+
 
     HTTPResponse processPostRequests(HTTPMessage req, store int threadId) {
-        char responseContent[] = new char[]()
-        PostsRepository repo = new PostsRepository()
 
-        if (req.resource == "/post") {
-            char body[] = new char[](req.postData)
-            CreatePostDTO createPostDTO = je.jsonToData(body, typeof(CreatePostDTO))
-            Post newPost = new Post(0, createPostDTO.userId, 0, createPostDTO.content, new DateTime())
-            repo.addPost(newPost, threadId)
-            return build201(req, responseContent)
-        } else if (su.startsWith(req.resource, "/adapt/")) {
-            String pathInfo[] = su.explode(req.resource, "/") // expected: ["like", "<proxy:number>"]
-            int proxyId = pathInfo[1].string.intFromString()
-            char body[] = new char[](req.postData)
-            Address newAddress[] = je.jsonToArray(body, typeof(Address[]))
-            char proxyNamespace[] = remoteNames[proxyId].string
-
-            logger.storeInfo("$debugMSG Adapted, $proxyNamespace, $(iu.makeString(newAddress.arrayLength))")
-
-            changeRepo(proxyId, newAddress)
-
-            responseContent = "Repository changed to $proxyNamespace"
-            return build200(req, responseContent)
-        }
+        if (req.resource == "/post") return postAddPost(req, threadId)
+        else if (su.startsWith(req.resource, "/adapt/")) return postAdapt(req)
 
         return null
     }
 
-    HTTPResponse build200(HTTPMessage request, char body[]) {
-        byte responseContentBytes[] = dana.serial(body)
-        return new HTTPResponse(
-            200,
-            "Accepted",
-            HTTPUtil.SERVER_NAME,
-            responseContentBytes.arrayLength,
-            request.mimeType,
-            body
-        )
+    HTTPResponse postAddPost(HTTPMessage req, int threadId) {
+        char body[] = new char[](req.postData)
+        CreatePostDTO createPostDTO = je.jsonToData(body, typeof(CreatePostDTO))
+        
+        Post newPost = new Post(0, createPostDTO.userId, 0, createPostDTO.content, new DateTime())
+        ms.tickMetric(threadId, "cacheUpdateStartTime")
+        cacheRepo.addPostInCache(newPost)
+        ms.tickMetric(threadId, "cacheUpdateEndTime")
+        
+        return httpUtil.build201(req, "")
     }
 
-    HTTPResponse build201(HTTPMessage request, char body[]) {
-        byte responseContentBytes[] = dana.serial(body)
-        return new HTTPResponse(
-            201,
-            "Created",
-            HTTPUtil.SERVER_NAME,
-            responseContentBytes.arrayLength,
-            request.mimeType,
-            body
-        )
-    }
+    HTTPResponse postAdapt(HTTPMessage req) {
+        String pathInfo[] = su.explode(req.resource, "/") // expected: ["like", "<proxy:number>"]
+        int proxyId = pathInfo[1].string.intFromString()
+        char body[] = new char[](req.postData)
+        Address newAddress[] = je.jsonToArray(body, typeof(Address[]))
+        char proxyNamespace[] = remoteNames[proxyId].string
 
-    HTTPResponse build404(HTTPMessage request) {
-        return new HTTPResponse(
-            404,
-            "Not Found",
-            HTTPUtil.SERVER_NAME,
-            0,
-            request.mimeType,
-            ""
-        )
+        logger.storeInfo("$debugMSG Adapted, $proxyNamespace, $(iu.makeString(newAddress.arrayLength))")
+        changeRepo(proxyId, newAddress)
+
+        return httpUtil.build200(req, "Repository changed to $proxyNamespace")
     }
     
-    void sendResponse(HTTPMessage request, HTTPResponse response) {
-        // logger.info("$debugMSG - RESPONSE CONTENT")
-        request.socket.send("HTTP/1.1 $(iu.makeString(response.code)) $(response.status)\r\n")
-        // logger.info("HTTP/1.1 $(iu.makeString(response.code)) $(response.status)\r\n")
-		request.socket.send("Server: $(response.serverName) \r\n")
-        // logger.info("Server: $(response.serverName) \r\n")
-		request.socket.send("Content-Length: $(iu.makeString(response.contentLength))\r\n")
-        // logger.info("Content-Length: $(iu.makeString(response.contentLength))\r\n")
-		request.socket.send("Connection: close\r\n")
-        // logger.info("Connection: close\r\n")
-		request.socket.send("Content-Type: $(response.contentType)\r\n")
-        // logger.info("Content-Type: $(response.contentType)\r\n")
-		request.socket.send("\r\n")
-        // logger.info("\r\n")
-		request.socket.send(response.body)
-        // logger.info(response.body)
-        // logger.info("$debugMSG - END RESPONSE CONTENT")
-    }
-
     void changeRepo(int option, Address remotes[]) {
-        logger.info("Changing repository from $(names[lastComponentIndex].string) to $(names[option].string)")
+        logger.storeInfo("Changing repository from $(names[lastComponentIndex].string) to $(names[option].string)")
         if(lastComponentIndex != 0) {
             repoComponents[lastComponentIndex].mainComponent.callInterface(
                 cacheRepo,
@@ -252,16 +234,17 @@ libs.adaptation.AdaptationLyfecicle, libs.krabs.MetricsStore ms, time.TimeUnix t
             )
         }
 
-        char currentState[] = je.jsonFromArray(cacheRepo.getPosts())
-        logger.info("Current posts state: $(iu.makeString(currentState.arrayLength))")
-
-        adapter.adaptObject(repoComponents[lastComponentIndex].mainComponent, cacheRepo, repoComponents[option].mainComponent, "repositories.cache.CacheRepository")
+        adapter.adaptObject(
+            repoComponents[lastComponentIndex].mainComponent,
+            cacheRepo,
+            repoComponents[option].mainComponent,
+            "repositories.cache.CacheRepository"
+        )
         lastComponentIndex = option
         
         if (option != 0) {
             RemotesHandler handler = new RemotesHandler() from repoComponents[option].mainComponent
             handler.setRemotes(remotes)
-            cacheRepo.clearState() // clear remote state
             repoComponents[option].mainComponent.callInterface(
                 cacheRepo,
                 "libs.adaptation.AdaptationLyfecicle",
@@ -269,10 +252,17 @@ libs.adaptation.AdaptationLyfecicle, libs.krabs.MetricsStore ms, time.TimeUnix t
                 AdaptationLyfecicle.[onLoadRemoteState()],
                 null
             )
-            logger.info("$debugMSG current state: $( je.jsonFromArray( cacheRepo.getPosts() ) )")
         }
+    }
 
-        char stateAfterAdaptation[] = je.jsonFromArray(cacheRepo.getPosts())
-        logger.info("State after adaptation: $stateAfterAdaptation")
+    void saveCacheInDatabase() {
+        while(true) {
+            PostsRepository repo = new PostsRepository()
+            if(!cacheSaveServiceRunTime) break
+            Post newPosts[] = cacheRepo.getNewPosts()
+            repo.addPosts(newPosts)
+            cacheRepo.removeNewPostsFromCache()
+            timer.sleep(1000)
+        }
     }
 }

@@ -110,6 +110,7 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer {
         char responseContent[] = "Hello!"
         logger.storeInfo("[START] ======================\n")
         ms.startCycleMeasurement()
+        cacheSaveServiceRunTime = true
         return httpUtil.build200(req, responseContent)
     }
 
@@ -117,6 +118,7 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer {
         char responseContent[] = "Finish test!"
         logger.storeInfo("[END] =======================\n\n")
         ms.finishCycleMeasurement()
+        cacheSaveServiceRunTime = false
         return httpUtil.build200(req, responseContent)
     }
 

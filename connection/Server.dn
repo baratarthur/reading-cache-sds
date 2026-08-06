@@ -54,6 +54,7 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer {
 		}
 
         initRepo()
+        saveCacheInDatabase()
 
 		logger.storeInfo("$debugMSG Server started on port $(iu.makeString(PORT))")
 		while (serviceStatus) {
@@ -206,7 +207,7 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer {
         cacheRepo.addPostInCache(newPost)
         ms.tickMetric(threadId, "cacheUpdateEndTime")
         
-        return httpUtil.build201(req, "")
+        return httpUtil.build201(req, "Success")
     }
 
     HTTPResponse postAdapt(HTTPMessage req) {
@@ -262,6 +263,7 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer {
             Post newPosts[] = cacheRepo.getNewPosts()
             repo.addPosts(newPosts)
             cacheRepo.removeNewPostsFromCache()
+            logger.storeInfo("$(iu.makeString(newPosts.arrayLength)) posts saved sucessfully!")
             timer.sleep(1000)
         }
     }

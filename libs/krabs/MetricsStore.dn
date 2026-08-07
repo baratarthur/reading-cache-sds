@@ -2,7 +2,7 @@
 const char TAG[] = "[@MetricsStore] - "
 
 component provides MetricsStore requires libs.utils.Logger logger, data.IntUtil iu, time.Timer timer, data.json.JSONEncoder je,
-time.Calendar ic, time.TimeUnix timeUnix {
+time.Calendar ic, time.TimeUnix timeUnix, data.csv.CSVParser csvParser, io.File {
     static RequestMetric requests[] = new RequestMetric[]()
     static int cacheSize
     static int cacheHit
@@ -39,31 +39,25 @@ time.Calendar ic, time.TimeUnix timeUnix {
     void measureEachSecond() {
         while(true) {
             if (!measure) break
-            dec cacheLookup = cacheLookupTime()
-            dec databaseService = databaseServiceTime()
-            dec cacheUpdate = cacheUpdateTime()
-            dec waitingBeforeLookup = waitingBeforeCacheLookup()
-            dec waitingBeforeDatabase = waitingBeforeDatabase()
-            dec waitingBeforeUpdate = waitingBeforeCacheUpdate()
             dec totalLatency = totalLatency()
 
             char log[] = new char[](
                 TAG,
                 "{",
-                // "\"cache_size\": \"$(iu.makeString(cacheSize))\",",
                 "\"cacheHits\": \"$(iu.makeString(cacheHit))\",",
                 "\"cacheMiss\": \"$(iu.makeString(cacheMiss))\",",
-                // "\"cache_lookup\": \"$(iu.makeString(cacheLookup))\",",
-                // "\"database_service\": \"$(iu.makeString(databaseService))\",",
-                // "\"cache_update\": \"$(iu.makeString(cacheUpdate))\",",
-                // "\"waiting_before_lookup\": \"$(iu.makeString(waitingBeforeLookup))\",",
-                // "\"waiting_before_database\": \"$(iu.makeString(waitingBeforeDatabase))\",",
-                // "\"waiting_before_update\": \"$(iu.makeString(waitingBeforeUpdate))\",",
                 "\"total_latency\": \"$(iu.makeString(totalLatency))\"",
                 "}"
             )
             logger.storeInfo(log)
             timer.sleep(1000)
+        }
+
+        File fd = new File("log_requests.csv", File.WRITE)
+        if(csvParser.writeDocument(fd, true, ",", requests)) {
+            logger.storeInfo("document stored successfully")
+        } else {
+            logger.storeInfo("Error while trying to save logs")
         }
     }
 

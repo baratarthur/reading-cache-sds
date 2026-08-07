@@ -46,13 +46,6 @@ component provides repositories.cache.CacheRepository(libs.adaptation.Adaptation
 			return je.jsonToData(res.content, typeof(Post))
 		}
 
-		Post[] CacheRepository:getFeedFromCache() {
-			char requestBody[] = ""
-			Request req = new Request(buildMetaForMethod("getFeedFromCache"), requestBody)
-			Response res = anycast(req)
-			return je.jsonToArray(res.content, typeof(Post[]))
-		}
-
 		Post[] CacheRepository:getNewPosts() {
 			char requestBody[] = ""
 			Request req = new Request(buildMetaForMethod("getNewPosts"), requestBody)

@@ -84,6 +84,19 @@ component provides repositories.cache.CacheRepository(libs.adaptation.Adaptation
 			return returnValue
 		}
 
+		Post[] CacheRepository:getCachedPosts() {
+			char requestBody[] = ""
+			Request req = new Request(buildMetaForMethod("getCachedPosts"), requestBody)
+			Response res[] = broadcastList(req)
+			Post returnValue[]
+			for(int i = 0; i < res.arrayLength; i++) {
+				Post partialValue[] = je.jsonToArray(res[i].content, typeof(Post[]))
+				returnValue = pu.accumulate(returnValue, partialValue)
+			}
+
+			return returnValue
+		}
+
 		Post[] CacheRepository:removeNewPostsFromCache() {
 			char requestBody[] = ""
 			Request req = new Request(buildMetaForMethod("removeNewPostsFromCache"), requestBody)

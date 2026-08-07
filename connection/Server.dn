@@ -139,12 +139,14 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer {
         
         Post userPosts[]
         ms.tickMetric(threadId, "cacheLookupTime")
-        Post cachedPosts[] = cacheRepo.getFeedFromCache()
+        Post cachedPosts[] = cacheRepo.getCachedPosts()
         ms.tickMetric(threadId, "cacheLookupEndTime")
         
         if(cachedPosts.arrayLength > 4) {
             ms.hitCache()
-            userPosts = cachedPosts
+            ms.tickMetric(threadId, "cacheLookupTime")
+            userPosts = cacheRepo.getFeedFromCache()
+            ms.tickMetric(threadId, "cacheLookupEndTime")
         } else {
             ms.missCache()
             userPosts = repo.getUserFeed(userId, threadId)

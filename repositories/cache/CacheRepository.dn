@@ -25,6 +25,17 @@ libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je, 
         return newPosts
     }
 
+
+    Post[] CacheRepository:getCachedPosts() {
+        Post cachedPosts[] = new Post[]()
+        
+        for(int i = 0; i < cache.arrayLength; i++) {
+            if(cache[i].id != 0) cachedPosts = new Post[](cachedPosts, cache[i])
+        }
+
+        return cachedPosts
+    }
+
     Post[] CacheRepository:getFeedFromCache() {
         Post feed[] = new Post[]()
         

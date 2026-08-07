@@ -60,6 +60,13 @@ component provides repositories.cache.CacheRepository(libs.adaptation.Adaptation
 			return je.jsonToArray(res.content, typeof(Post[]))
 		}
 
+		Post[] CacheRepository:getCachedPosts() {
+			char requestBody[] = ""
+			Request req = new Request(buildMetaForMethod("getCachedPosts"), requestBody)
+			Response res = anycast(req)
+			return je.jsonToArray(res.content, typeof(Post[]))
+		}
+
 		Post[] CacheRepository:removeNewPostsFromCache() {
 			char requestBody[] = ""
 			Request req = new Request(buildMetaForMethod("removeNewPostsFromCache"), requestBody)

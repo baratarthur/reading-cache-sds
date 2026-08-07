@@ -21,6 +21,7 @@ interface CacheRepository {
     Post getPostByIdFromCache(store int postId)
     Post[] getFeedFromCache()
     Post[] getNewPosts()
+    Post[] getCachedPosts()
     Post[] removeNewPostsFromCache()
     Post[] getPosts()
     void clearState()

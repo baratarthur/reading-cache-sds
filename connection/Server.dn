@@ -263,8 +263,10 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer {
             PostsRepository repo = new PostsRepository()
             if(!cacheSaveServiceRunTime) break
             Post newPosts[] = cacheRepo.getNewPosts()
-            repo.addPosts(newPosts)
-            cacheRepo.removeNewPostsFromCache()
+            if(newPosts.arrayLength > 0) {
+                repo.addPosts(newPosts)
+                cacheRepo.removeNewPostsFromCache()
+            }
             logger.storeInfo("$(iu.makeString(newPosts.arrayLength)) posts saved sucessfully!")
             timer.sleep(1000)
         }

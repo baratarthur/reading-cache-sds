@@ -270,7 +270,7 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer {
                 cacheRepo.removeNewPostsFromCache()
             }
             logger.storeInfo("$(iu.makeString(newPosts.arrayLength)) posts saved sucessfully!")
-            timer.sleep(1000)
+            timer.sleep(5000)
         }
     }
 }

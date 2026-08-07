@@ -54,7 +54,6 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer {
 		}
 
         initRepo()
-        saveCacheInDatabase()
 
 		logger.storeInfo("$debugMSG Server started on port $(iu.makeString(PORT))")
 		while (serviceStatus) {
@@ -111,6 +110,7 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer {
         logger.storeInfo("[START] ======================\n")
         ms.startCycleMeasurement()
         cacheSaveServiceRunTime = true
+        asynch::saveCacheInDatabase()
         return httpUtil.build200(req, responseContent)
     }
 

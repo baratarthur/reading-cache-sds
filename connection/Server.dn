@@ -266,8 +266,9 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
         while(true) {
             PostsRepository repo = new PostsRepository()
             if(!cacheSaveServiceRunTime) break
+            Post newPosts[] = new Post[]()
             mutex(writingLock) {
-                Post newPosts[] = cacheRepo.getNewPosts()
+                newPosts = cacheRepo.getNewPosts()
                 if(newPosts.arrayLength > 0) {
                     repo.addPosts(newPosts)
                     cacheRepo.removeNewPostsFromCache()

@@ -39,6 +39,8 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
     bool serviceStatus = false
     bool cacheSaveServiceRunTime = false
 
+    Mutex writingLock = new Mutex()
+
         
     void Destructor:destroy() {
         serviceStatus = false
@@ -208,7 +210,7 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
         
         Post newPost = new Post(0, createPostDTO.userId, 0, createPostDTO.content, new DateTime())
         ms.tickMetric(threadId, "cacheUpdateStartTime")
-        cacheRepo.addPostInCache(newPost)
+        mutex(writingLock) { cacheRepo.addPostInCache(newPost) }
         ms.tickMetric(threadId, "cacheUpdateEndTime")
         
         return httpUtil.build201(req, "Success")
@@ -264,10 +266,12 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
         while(true) {
             PostsRepository repo = new PostsRepository()
             if(!cacheSaveServiceRunTime) break
-            Post newPosts[] = cacheRepo.getNewPosts()
-            if(newPosts.arrayLength > 0) {
-                repo.addPosts(newPosts)
-                cacheRepo.removeNewPostsFromCache()
+            mutex(writingLock) {
+                Post newPosts[] = cacheRepo.getNewPosts()
+                if(newPosts.arrayLength > 0) {
+                    repo.addPosts(newPosts)
+                    cacheRepo.removeNewPostsFromCache()
+                }
             }
             logger.storeInfo("$(iu.makeString(newPosts.arrayLength)) posts saved sucessfully!")
             timer.sleep(5000)

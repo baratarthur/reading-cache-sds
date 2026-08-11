@@ -59,7 +59,7 @@ libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je, 
         conn.close()
         int timeToExecute = ls.getMilisecondsExecutionTimeSince(executionStart)
 
-        logger.storeInfo(new char[](
+        logger.info(new char[](
             debugMSG,
             "{\"threadId\": \"$(iu.makeString(threadId))\",  \"connectionTime\": \"$(iu.makeString(timeToConnect))\", \"executionTime\": \"$(iu.makeString(timeToExecute))\"}"
         ))

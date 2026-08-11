@@ -113,6 +113,7 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
         ms.startCycleMeasurement()
         cacheSaveServiceRunTime = true
         asynch::saveCacheInDatabase()
+        asynch::getCacheSize()
         return httpUtil.build200(req, responseContent)
     }
 
@@ -283,7 +284,7 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
         while(true) {
             if(!cacheSaveServiceRunTime) break
             int cacheSize = cacheRepo.getPosts().arrayLength
-            logger.storeInfo("\"cacheSize\": \"$(iu.makeString(cacheSize))\"}")
+            logger.storeInfo("$debugMSG {\"cacheSize\": \"$(iu.makeString(cacheSize))\"}")
             timer.sleep(1000)
         }
     }

@@ -21,29 +21,13 @@ component provides libs.network.rpc.RPCUtil requires data.json.JSONEncoder je, n
             requestContent = je.jsonFromArray(req.r.meta)
         }
 
-        DateTime connectionStart = ic.getTime()
         TCPSocket connection = new TCPSocket()
         connection.connect(req.to.name, req.to.port)
-        int timeToConnect = ls.getMilisecondsExecutionTimeSince(connectionStart)
         
         requestContent = new char[](requestContent, Constants.EOF)
-        
-        DateTime sendTime = ic.getTime()
+
         connection.send(requestContent)
-        int timeToSend = ls.getMilisecondsExecutionTimeSince(sendTime)
-        
-        DateTime receiveTime = ic.getTime()
         char responseContent[] = receiveData(connection)
-        int timeToReceive = ls.getMilisecondsExecutionTimeSince(receiveTime)
-
-        logger.storeInfo(new char[](
-            debugMSG,
-            "{\"meta\": \"$(je.jsonFromArray(req.r.meta))\", ",
-            "\"connectionTime\": \"$(iu.makeString(timeToConnect))\", ",
-            "\"sendTime\": \"$(iu.makeString(timeToSend))\", ",
-            "\"receiveTime\": \"$(iu.makeString(timeToReceive))\"}"
-        ))
-
         String json[] = su.explode(responseContent, Constants.SEPARATOR)
         Metadata meta[] = je.jsonToArray(json[0].string, typeof(Metadata[]))
         if(json.arrayLength > 1) r = new Response(meta, json[1].string)

@@ -28,7 +28,6 @@ component provides libs.network.rpc.RPCUtil requires data.json.JSONEncoder je, n
         connection.send(requestContent)
         
         char responseContent[] = receiveData(connection)
-        logger.storeInfo("$debugMSG - $responseContent")
         String json[] = su.explode(responseContent, Constants.SEPARATOR)
         Metadata meta[] = je.jsonToArray(json[0].string, typeof(Metadata[]))
         if(json.arrayLength > 1) r = new Response(meta, json[1].string)

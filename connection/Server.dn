@@ -169,14 +169,14 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
         ms.tickMetric(threadId, "cacheLookupEndTime")
         
         if(post != null) {
-            logger.storeInfo("post is null")
+            logger.storeInfo("post is not null $(je.jsonFromData(post))")
             ms.hitCache()
             char postStr[] = je.jsonFromData(post)
             logger.info("post $(iu.makeString(postId)) found in cache!")
         }
         
         if(post == null) {
-            logger.storeInfo("post is not null $(je.jsonFromData(post))")
+            logger.storeInfo("post is null")
             ms.missCache()
             post = repo.getPostById(postId, threadId) // stateless
             char postStr[] = je.jsonFromData(post)

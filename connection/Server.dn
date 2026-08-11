@@ -278,4 +278,13 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
             timer.sleep(5000)
         }
     }
+
+    void getCacheSize() {
+        while(true) {
+            if(!cacheSaveServiceRunTime) break
+            int cacheSize = cacheRepo.getPosts().arrayLength
+            logger.storeInfo("\"cacheSize\": \"$(iu.makeString(cacheSize))\"}")
+            timer.sleep(1000)
+        }
+    }
 }

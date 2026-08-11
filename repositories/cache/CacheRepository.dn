@@ -4,7 +4,7 @@ uses libs.utils.DatabaseConfig
 const char debugMSG[] = "[@CacheRepository]"
 
 component provides repositories.cache.CacheRepository requires time.TimeUnix timeUnix, time.Calendar ic, data.IntUtil iu,
-libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je, repositories.posts.PostsRepository, util.Random random {
+libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je, repositories.posts.PostsRepository {
     Mutex cacheLock = new Mutex()
 
     void CacheRepository:setPosts(store Post posts[]) {
@@ -28,8 +28,12 @@ libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je, 
 
     Post[] CacheRepository:getCachedPosts() {
         Post cachedPosts[] = new Post[]()
+        int amountOfCachedPosts = 0
+
+        if(cache.arrayLength < 5) amountOfCachedPosts = cache.arrayLength
+        else amountOfCachedPosts = 5
         
-        for(int i = 0; i < cache.arrayLength; i++) {
+        for(int i = 0; i < amountOfCachedPosts; i++) {
             if(cache[i].id != 0) cachedPosts = new Post[](cachedPosts, cache[i])
         }
 

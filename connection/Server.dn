@@ -267,13 +267,12 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
             PostsRepository repo = new PostsRepository()
             if(!cacheSaveServiceRunTime) break
             DateTime savePostsTime = ic.getTime()
-            Post newPosts[] = new Post[]()
             mutex(writingLock) {
                 cacheRepo.storeNewPosts()
                 cacheRepo.removeNewPostsFromCache()
             }
             int timeToSave = ls.getMilisecondsExecutionTimeSince(savePostsTime)
-            logger.storeInfo("It took $(iu.makeString(timeToSave)) to save $(iu.makeString(newPosts.arrayLength)) posts!")
+            logger.storeInfo("It took $(iu.makeString(timeToSave)) to save all new posts!")
             timer.sleep(5000)
         }
     }

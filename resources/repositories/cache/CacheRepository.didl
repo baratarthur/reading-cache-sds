@@ -2,7 +2,10 @@
     "name": "cache-repository",
     "dependencies": [
         { "lib": "time.Timer", "alias": "timer" },
-        { "lib": "libs.utils.PostsUtils", "alias": "pu" }
+        { "lib": "libs.utils.PostsUtils", "alias": "pu" },
+        { "lib": "libs.krabs.LatencyStore", "alias": "ls" },
+        { "lib": "data.IntUtil", "alias": "iu" },
+        { "lib": "libs.utils.Logger", "alias": "logger" }
     ],
     "attributes": {
         "cache": { "onTransfer": "setPosts", "onLoad": "getPosts" }

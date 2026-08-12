@@ -1,7 +1,7 @@
 uses libs.utils.Constants
 
 
-component provides repositories.cache.CacheRepository(libs.adaptation.AdaptationLyfecicle), libs.krabs.RemotesHandler requires time.Timer timer, libs.utils.PostsUtils pu, libs.network.rpc.RPCUtil rpcUtil, data.json.JSONEncoder je {
+component provides repositories.cache.CacheRepository(libs.adaptation.AdaptationLyfecicle), libs.krabs.RemotesHandler requires time.Timer timer, libs.utils.PostsUtils pu, libs.krabs.LatencyStore ls, data.IntUtil iu, libs.utils.Logger logger, libs.network.rpc.RPCUtil rpcUtil, data.json.JSONEncoder je {
 	static Address remotes[] = new Address[]()
 	
 	implementation RemotesHandler {
@@ -40,12 +40,14 @@ component provides repositories.cache.CacheRepository(libs.adaptation.Adaptation
 			
 		}
 
-		Post CacheRepository:getPostByIdFromCache(store int postId) {
-			GetPostByIdFromCacheParamsFormat params = new GetPostByIdFromCacheParamsFormat(postId)
+		Post CacheRepository:getPostByIdFromCache(store int postId, store DateTime timeToAccess) {
+			int timeToReachComponentProxy = ls.getMilisecondsExecutionTimeSince(timeToAccess)
+			logger.storeInfo("{\"timeToAccessProxy\": \"$(iu.makeString(timeToReachComponentProxy))\"}")
+			GetPostByIdFromCacheParamsFormat params = new GetPostByIdFromCacheParamsFormat(postId, timeToAccess)
 			char requestBody[] = je.jsonFromData(params)
 			Request req = new Request(buildMetaForMethod("getPostByIdFromCache"), requestBody)
 			Response res = anycast(req)
-			if (res.content == "") return null
+			if (res.content == "{}") return null
 			return je.jsonToData(res.content, typeof(Post))
 		}
 
@@ -53,7 +55,7 @@ component provides repositories.cache.CacheRepository(libs.adaptation.Adaptation
 			char requestBody[] = ""
 			Request req = new Request(buildMetaForMethod("getNewPosts"), requestBody)
 			Response res = anycast(req)
-			if (res.content == "") return null
+			if (res.content == "{}") return null
 			return je.jsonToArray(res.content, typeof(Post[]))
 		}
 
@@ -61,7 +63,7 @@ component provides repositories.cache.CacheRepository(libs.adaptation.Adaptation
 			char requestBody[] = ""
 			Request req = new Request(buildMetaForMethod("getCachedPosts"), requestBody)
 			Response res = anycast(req)
-			if (res.content == "") return null
+			if (res.content == "{}") return null
 			return je.jsonToArray(res.content, typeof(Post[]))
 		}
 
@@ -69,7 +71,7 @@ component provides repositories.cache.CacheRepository(libs.adaptation.Adaptation
 			char requestBody[] = ""
 			Request req = new Request(buildMetaForMethod("removeNewPostsFromCache"), requestBody)
 			Response res = anycast(req)
-			if (res.content == "") return null
+			if (res.content == "{}") return null
 			return je.jsonToArray(res.content, typeof(Post[]))
 		}
 
@@ -77,7 +79,7 @@ component provides repositories.cache.CacheRepository(libs.adaptation.Adaptation
 			char requestBody[] = ""
 			Request req = new Request(buildMetaForMethod("getPosts"), requestBody)
 			Response res = anycast(req)
-			if (res.content == "") return null
+			if (res.content == "{}") return null
 			return je.jsonToArray(res.content, typeof(Post[]))
 		}
 
@@ -107,12 +109,9 @@ component provides repositories.cache.CacheRepository(libs.adaptation.Adaptation
 
 		Response broadcast(Request r) {
 			Response res
-			mutex(pointerLock) {
-				for(int i = 0; i < remotes.arrayLength; i++) {
-					RequestWrapper reqWrapper = new RequestWrapper(remotes[i], r)
-					res = rpcUtil.make(reqWrapper)
-				}
-
+			for(int i = 0; i < remotes.arrayLength; i++) {
+				RequestWrapper reqWrapper = new RequestWrapper(remotes[i], r)
+				res = rpcUtil.make(reqWrapper)
 			}
 
 			return res

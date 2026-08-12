@@ -113,7 +113,6 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
         ms.startCycleMeasurement()
         cacheSaveServiceRunTime = true
         asynch::saveCacheInDatabase()
-        asynch::getCacheSize()
         return httpUtil.build200(req, responseContent)
     }
 
@@ -141,15 +140,16 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
         int userId = pathInfo[1].string.intFromString()
         
         Post userPosts[]
-        ms.tickMetric(threadId, "cacheLookupTime")
+        // ms.tickMetric(threadId, "cacheLookupTime")
+        DateTime lookupForFeed = ic.getTime()
         Post cachedPosts[] = cacheRepo.getCachedPosts()
-        ms.tickMetric(threadId, "cacheLookupEndTime")
+        int timeToLookup = ls.getMilisecondsExecutionTimeSince(lookupForFeed)
+        // ms.tickMetric(threadId, "cacheLookupEndTime")
+        logger.storeInfo(new char[](debugMSG, "{\"lookUpCacheInFeed\": \"$(iu.makeString(timeToLookup))\"}"))
         
         if(cachedPosts.arrayLength > 4) {
             ms.hitCache()
-            ms.tickMetric(threadId, "cacheLookupTime")
             userPosts = pu.getFeedFromCached(cachedPosts)
-            ms.tickMetric(threadId, "cacheLookupEndTime")
         } else {
             ms.missCache()
             userPosts = repo.getUserFeed(userId, threadId)
@@ -165,7 +165,8 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
         int postId = pathInfo[1].string.intFromString()
         
         ms.tickMetric(threadId, "cacheLookupTime")
-        Post post = cacheRepo.getPostByIdFromCache(postId) // stateful
+        DateTime timeToAccessTheComponent = ic.getTime()
+        Post post = cacheRepo.getPostByIdFromCache(postId, timeToAccessTheComponent) // stateful
         ms.tickMetric(threadId, "cacheLookupEndTime")
         
         if(post != null) {
@@ -178,7 +179,6 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
             ms.missCache()
             post = repo.getPostById(postId, threadId) // stateless
             char postStr[] = je.jsonFromData(post)
-            logger.info("post $(iu.makeString(postId)) loaded from database!")
             ms.tickMetric(threadId, "cacheUpdateStartTime")
             cacheRepo.addPostInCache(post) // stateful
             ms.tickMetric(threadId, "cacheUpdateEndTime")
@@ -277,15 +277,6 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
             }
             logger.storeInfo("$(iu.makeString(newPosts.arrayLength)) posts saved sucessfully!")
             timer.sleep(5000)
-        }
-    }
-
-    void getCacheSize() {
-        while(true) {
-            if(!cacheSaveServiceRunTime) break
-            int cacheSize = cacheRepo.getPosts().arrayLength
-            logger.storeInfo("$debugMSG {\"cacheSize\": \"$(iu.makeString(cacheSize))\"}")
-            timer.sleep(1000)
         }
     }
 }

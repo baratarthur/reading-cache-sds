@@ -49,7 +49,7 @@ libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je, 
         return cache
     }
     
-    Post CacheRepository:getPostByIdFromCache(store int postId) {
+    Post CacheRepository:getPostByIdFromCache(store int postId, store DateTime timeToAccess) {
         Post cachedPost = null
         
         for (int i = 0; i < cache.arrayLength; i++) {

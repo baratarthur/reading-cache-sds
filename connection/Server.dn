@@ -218,7 +218,6 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
 
     HTTPResponse postAdapt(HTTPMessage req) {
         String pathInfo[] = su.explode(req.resource, "/") // expected: ["like", "<proxy:number>"]
-        logger.storeInfo(new char[](debugMSG, pathInfo[1].string, " | ", pathInfo[0].string))
         int proxyId = pathInfo[1].string.intFromString()
         char body[] = new char[](req.postData)
         Address newAddress[] = je.jsonToArray(body, typeof(Address[]))
@@ -270,11 +269,8 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
             DateTime savePostsTime = ic.getTime()
             Post newPosts[] = new Post[]()
             mutex(writingLock) {
-                newPosts = cacheRepo.getNewPosts()
-                if(newPosts.arrayLength > 0) {
-                    repo.addPosts(newPosts)
-                    cacheRepo.removeNewPostsFromCache()
-                }
+                cacheRepo.storeNewPosts()
+                cacheRepo.removeNewPostsFromCache()
             }
             int timeToSave = ls.getMilisecondsExecutionTimeSince(savePostsTime)
             logger.storeInfo("It took $(iu.makeString(timeToSave)) to save $(iu.makeString(newPosts.arrayLength)) posts!")

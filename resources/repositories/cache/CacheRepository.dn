@@ -18,8 +18,8 @@ interface CacheRepository {
 
     void setPosts(store Post posts[])
     void addPostInCache(store Post cachePost)
+    void storeNewPosts()
     Post getPostByIdFromCache(store int postId)
-    Post[] getNewPosts()
     Post[] getCachedPosts()
     Post[] removeNewPostsFromCache()
     Post[] getPosts()

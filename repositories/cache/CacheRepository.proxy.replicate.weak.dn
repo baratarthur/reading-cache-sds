@@ -40,6 +40,13 @@ component provides repositories.cache.CacheRepository(libs.adaptation.Adaptation
 			
 		}
 
+		void CacheRepository:storeNewPosts() {
+			char requestBody[] = ""
+			Request req = new Request(buildMetaForMethod("storeNewPosts"), requestBody)
+			anycast(req)
+			
+		}
+
 		Post CacheRepository:getPostByIdFromCache(store int postId) {
 			GetPostByIdFromCacheParamsFormat params = new GetPostByIdFromCacheParamsFormat(postId)
 			char requestBody[] = je.jsonFromData(params)
@@ -47,14 +54,6 @@ component provides repositories.cache.CacheRepository(libs.adaptation.Adaptation
 			Response res = anycast(req)
 			if (res.content == "{}") return null
 			return je.jsonToData(res.content, typeof(Post))
-		}
-
-		Post[] CacheRepository:getNewPosts() {
-			char requestBody[] = ""
-			Request req = new Request(buildMetaForMethod("getNewPosts"), requestBody)
-			Response res = anycast(req)
-			if (res.content == "{}") return null
-			return je.jsonToArray(res.content, typeof(Post[]))
 		}
 
 		Post[] CacheRepository:getCachedPosts() {

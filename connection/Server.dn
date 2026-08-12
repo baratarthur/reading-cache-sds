@@ -218,6 +218,7 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
 
     HTTPResponse postAdapt(HTTPMessage req) {
         String pathInfo[] = su.explode(req.resource, "/") // expected: ["like", "<proxy:number>"]
+        logger.storeInfo(new char[](debugMSG, pathInfo[1].string, " | ", pathInfo[0].string))
         int proxyId = pathInfo[1].string.intFromString()
         char body[] = new char[](req.postData)
         Address newAddress[] = je.jsonToArray(body, typeof(Address[]))

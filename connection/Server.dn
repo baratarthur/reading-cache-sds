@@ -266,6 +266,7 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
         while(true) {
             PostsRepository repo = new PostsRepository()
             if(!cacheSaveServiceRunTime) break
+            DateTime savePostsTime = ic.getTime()
             Post newPosts[] = new Post[]()
             mutex(writingLock) {
                 newPosts = cacheRepo.getNewPosts()
@@ -274,7 +275,8 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
                     cacheRepo.removeNewPostsFromCache()
                 }
             }
-            logger.storeInfo("$(iu.makeString(newPosts.arrayLength)) posts saved sucessfully!")
+            int timeToSave = ls.getMilisecondsExecutionTimeSince(savePostsTime)
+            logger.storeInfo("It took $(iu.makeString(timeToSave)) to save $(iu.makeString(newPosts.arrayLength)) posts!")
             timer.sleep(5000)
         }
     }

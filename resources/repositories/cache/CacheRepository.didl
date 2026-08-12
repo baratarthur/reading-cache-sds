@@ -24,7 +24,7 @@
         "getCachedPosts": {
             "returnParser": "je.jsonToArray({}, typeof(Post[]))",
             "remoteReturnParser": "je.jsonFromArray({})",
-            "onMerge": "pu.accumulate"
+            "dontMerge": true
         },
         "removeNewPostsFromCache": {
             "returnParser": "je.jsonToArray({}, typeof(Post[]))",

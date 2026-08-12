@@ -47,6 +47,13 @@ component provides repositories.cache.CacheRepository(libs.adaptation.Adaptation
 			
 		}
 
+		void CacheRepository:removeNewPostsFromCache() {
+			char requestBody[] = ""
+			Request req = new Request(buildMetaForMethod("removeNewPostsFromCache"), requestBody)
+			anycast(req)
+			
+		}
+
 		Post CacheRepository:getPostByIdFromCache(store int postId) {
 			GetPostByIdFromCacheParamsFormat params = new GetPostByIdFromCacheParamsFormat(postId)
 			char requestBody[] = je.jsonFromData(params)
@@ -59,14 +66,6 @@ component provides repositories.cache.CacheRepository(libs.adaptation.Adaptation
 		Post[] CacheRepository:getCachedPosts() {
 			char requestBody[] = ""
 			Request req = new Request(buildMetaForMethod("getCachedPosts"), requestBody)
-			Response res = anycast(req)
-			if (res.content == "{}") return null
-			return je.jsonToArray(res.content, typeof(Post[]))
-		}
-
-		Post[] CacheRepository:removeNewPostsFromCache() {
-			char requestBody[] = ""
-			Request req = new Request(buildMetaForMethod("removeNewPostsFromCache"), requestBody)
 			Response res = anycast(req)
 			if (res.content == "{}") return null
 			return je.jsonToArray(res.content, typeof(Post[]))
@@ -102,6 +101,25 @@ component provides repositories.cache.CacheRepository(libs.adaptation.Adaptation
 			int i = addressPointer++ % remotes.arrayLength
 			RequestWrapper reqWrapper = new RequestWrapper(remotes[i], r)
 			return rpcUtil.make(reqWrapper)
+		}
+
+		void nonBlockingBroadcastList(Request r) {
+			Response res[] = new Response[]()
+			Thread threads[] = new Thread[]()
+			for(int i = 0; i < remotes.arrayLength; i++) {
+				Thread t = asynch::makeNonBlockingRequest(r, i)
+				threads = new Thread[](threads, t)
+			}
+
+			for(int i = 0; i < threads.arrayLength; i++) {
+				threads[i].join()
+			}
+
+		}
+
+		void makeNonBlockingRequest(Request r, int i) {
+			RequestWrapper reqWrapper = new RequestWrapper(remotes[i], r)
+			rpcUtil.make(reqWrapper)
 		}
 
 		Response broadcast(Request r) {

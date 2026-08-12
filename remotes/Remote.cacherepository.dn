@@ -56,6 +56,11 @@ component provides remotes.Remote:cacherepository requires net.TCPSocket, net.TC
 			return connection.buildResponse("storeNewPosts", "200")
 		}
 
+		if(method == "removeNewPostsFromCache") {
+			remoteComponent.removeNewPostsFromCache()
+			return connection.buildResponse("removeNewPostsFromCache", "200")
+		}
+
 		if(method == "getPostByIdFromCache") {
 			GetPostByIdFromCacheParamsFormat paramsData = je.jsonToData(req.content, typeof(GetPostByIdFromCacheParamsFormat))
 			Post result = remoteComponent.getPostByIdFromCache(paramsData.postId)
@@ -65,11 +70,6 @@ component provides remotes.Remote:cacherepository requires net.TCPSocket, net.TC
 		if(method == "getCachedPosts") {
 			Post result[] = remoteComponent.getCachedPosts()
 			return connection.buildResponseWithData("getCachedPosts", "200", je.jsonFromArray(result))
-		}
-
-		if(method == "removeNewPostsFromCache") {
-			Post result[] = remoteComponent.removeNewPostsFromCache()
-			return connection.buildResponseWithData("removeNewPostsFromCache", "200", je.jsonFromArray(result))
 		}
 
 		if(method == "getPosts") {

@@ -19,15 +19,13 @@
         "storeNewPosts": {
             "global": true
         },
+        "removeNewPostsFromCache": {
+            "global": true
+        },
         "getCachedPosts": {
             "returnParser": "je.jsonToArray({}, typeof(Post[]))",
             "remoteReturnParser": "je.jsonFromArray({})",
             "dontMerge": true
-        },
-        "removeNewPostsFromCache": {
-            "returnParser": "je.jsonToArray({}, typeof(Post[]))",
-            "remoteReturnParser": "je.jsonFromArray({})",
-            "onMerge": "pu.accumulate"
         },
         "setPosts": {
             "balance": "posts",

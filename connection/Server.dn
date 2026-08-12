@@ -140,12 +140,9 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
         int userId = pathInfo[1].string.intFromString()
         
         Post userPosts[]
-        // ms.tickMetric(threadId, "cacheLookupTime")
-        DateTime lookupForFeed = ic.getTime()
+        ms.tickMetric(threadId, "cacheLookupTime")
         Post cachedPosts[] = cacheRepo.getCachedPosts()
-        int timeToLookup = ls.getMilisecondsExecutionTimeSince(lookupForFeed)
-        // ms.tickMetric(threadId, "cacheLookupEndTime")
-        logger.storeInfo(new char[](debugMSG, "{\"lookUpCacheInFeed\": \"$(iu.makeString(timeToLookup))\"}"))
+        ms.tickMetric(threadId, "cacheLookupEndTime")
         
         if(cachedPosts.arrayLength > 4) {
             ms.hitCache()

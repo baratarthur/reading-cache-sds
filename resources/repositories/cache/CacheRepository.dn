@@ -11,7 +11,6 @@ data AddPostInCacheParamsFormat {
 
 data GetPostByIdFromCacheParamsFormat {
     int postId
-    DateTime timeToAccess
 }
 
 interface CacheRepository {
@@ -19,7 +18,7 @@ interface CacheRepository {
 
     void setPosts(store Post posts[])
     void addPostInCache(store Post cachePost)
-    Post getPostByIdFromCache(store int postId, store DateTime timeToAccess)
+    Post getPostByIdFromCache(store int postId)
     Post[] getNewPosts()
     Post[] getCachedPosts()
     Post[] removeNewPostsFromCache()

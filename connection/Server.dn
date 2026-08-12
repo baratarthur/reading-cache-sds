@@ -165,8 +165,7 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
         int postId = pathInfo[1].string.intFromString()
         
         ms.tickMetric(threadId, "cacheLookupTime")
-        DateTime timeToAccessTheComponent = ic.getTime()
-        Post post = cacheRepo.getPostByIdFromCache(postId, timeToAccessTheComponent) // stateful
+        Post post = cacheRepo.getPostByIdFromCache(postId) // stateful
         ms.tickMetric(threadId, "cacheLookupEndTime")
         
         if(post != null) {

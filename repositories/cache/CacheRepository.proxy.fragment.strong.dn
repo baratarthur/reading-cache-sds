@@ -51,10 +51,8 @@ component provides repositories.cache.CacheRepository(libs.adaptation.Adaptation
 			
 		}
 
-		Post CacheRepository:getPostByIdFromCache(store int postId, store DateTime timeToAccess) {
-			int timeToReachComponentProxy = ls.getMilisecondsExecutionTimeSince(timeToAccess)
-			logger.storeInfo("{\"timeToAccessProxy\": \"$(iu.makeString(timeToReachComponentProxy))\"}")
-			GetPostByIdFromCacheParamsFormat params = new GetPostByIdFromCacheParamsFormat(postId, timeToAccess)
+		Post CacheRepository:getPostByIdFromCache(store int postId) {
+			GetPostByIdFromCacheParamsFormat params = new GetPostByIdFromCacheParamsFormat(postId)
 			char requestBody[] = je.jsonFromData(params)
 			Request req = new Request(buildMetaForMethod("getPostByIdFromCache"), requestBody)
 			Response res = hashcast(req, postId)

@@ -162,25 +162,18 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
         int postId = pathInfo[1].string.intFromString()
         
         ms.tickMetric(threadId, "cacheLookupTime")
-        Post post = cacheRepo.getPostByIdFromCache(postId) // stateful
+        CachedPost cachedPost = cacheRepo.getPostByIdFromCache(postId) // stateful
         ms.tickMetric(threadId, "cacheLookupEndTime")
         
-        if(post != null) {
-            ms.hitCache()
-            char postStr[] = je.jsonFromData(post)
-            logger.info("post $(iu.makeString(postId)) found in cache!")
-        }
-        
-        if(post == null) {
+        if(cachedPost.isInCache) ms.hitCache()
+        else {
             ms.missCache()
-            post = repo.getPostById(postId, threadId) // stateless
-            char postStr[] = je.jsonFromData(post)
             ms.tickMetric(threadId, "cacheUpdateStartTime")
-            cacheRepo.addPostInCache(post) // stateful
+            cacheRepo.addPostInCache(cachedPost.post) // stateful
             ms.tickMetric(threadId, "cacheUpdateEndTime")
         }
         
-        char responseContent[] = je.jsonFromData(post)
+        char responseContent[] = je.jsonFromData(cachedPost.post)
         return httpUtil.build200(req, responseContent)
     }
 

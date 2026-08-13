@@ -63,7 +63,7 @@ component provides remotes.Remote:cacherepository requires net.TCPSocket, net.TC
 
 		if(method == "getPostByIdFromCache") {
 			GetPostByIdFromCacheParamsFormat paramsData = je.jsonToData(req.content, typeof(GetPostByIdFromCacheParamsFormat))
-			Post result = remoteComponent.getPostByIdFromCache(paramsData.postId)
+			CachedPost result = remoteComponent.getPostByIdFromCache(paramsData.postId)
 			return connection.buildResponseWithData("getPostByIdFromCache", "200", je.jsonFromData(result))
 		}
 

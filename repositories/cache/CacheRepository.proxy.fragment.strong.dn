@@ -65,13 +65,13 @@ component provides repositories.cache.CacheRepository(libs.adaptation.Adaptation
 			
 		}
 
-		Post CacheRepository:getPostByIdFromCache(store int postId) {
+		CachedPost CacheRepository:getPostByIdFromCache(store int postId) {
 			GetPostByIdFromCacheParamsFormat params = new GetPostByIdFromCacheParamsFormat(postId)
 			char requestBody[] = je.jsonFromData(params)
 			Request req = new Request(buildMetaForMethod("getPostByIdFromCache"), requestBody)
 			Response res = hashcast(req, postId)
 			if (res.content == "{}") return null
-			return je.jsonToData(res.content, typeof(Post))
+			return je.jsonToData(res.content, typeof(CachedPost))
 		}
 
 		Post[] CacheRepository:getCachedPosts() {

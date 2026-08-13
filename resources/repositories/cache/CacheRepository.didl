@@ -35,7 +35,7 @@
             "hashkey": "cachePost.id"
         },
         "getPostByIdFromCache": {
-            "returnParser": "je.jsonToData({}, typeof(Post))",
+            "returnParser": "je.jsonToData({}, typeof(CachedPost))",
             "remoteReturnParser": "je.jsonFromData({})",
             "hashkey": "postId"
         }

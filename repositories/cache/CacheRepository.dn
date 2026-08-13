@@ -46,22 +46,47 @@ libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je, 
         cache = newCache
     }
     
-    Post CacheRepository:getPostByIdFromCache(store int postId) {
-        Post cachedPost = null
+    CachedPost CacheRepository:getPostByIdFromCache(store int postId) {
+        CachedPost cachedPost = new CachedPost(isInCache = false)
         
         for (int i = 0; i < cache.arrayLength; i++) {
             if (cache[i].id == postId) {
                 int ttlUnixInSeconds = timeUnix.toUnixTime(cache[i].ttl)
                 int nowUnixInSeconds = timeUnix.toUnixTime(ic.getTime())
-                if((nowUnixInSeconds - ttlUnixInSeconds) < 5 * 60) cachedPost = cache[i]
+                if((nowUnixInSeconds - ttlUnixInSeconds) < 5 * 60) {
+                    cachedPost.post = cache[i]
+                    cachedPost.isInCache = true
+                    break
+                }
             }
+        }
+
+        if (!cachedPost.isInCache) {
+            PostsRepository repo = new PostsRepository()
+            cachedPost.post = repo.getPostById(postId)
         }
 
         return cachedPost
     }
 
     void CacheRepository:addPostInCache(store Post cachePost) {
-        mutex(cacheLock) { cache = new Post[](cache, cachePost) }
+        if(cachePost.id == 0) cache = new Post[](cachePost, cache)
+        else {
+            bool existsInCache = false
+
+            for (int i = 0; i < cache.arrayLength; i++) {
+                if (cache[i].id == cachePost.id) {
+                    int ttlUnixInSeconds = timeUnix.toUnixTime(cache[i].ttl)
+                    int nowUnixInSeconds = timeUnix.toUnixTime(ic.getTime())
+                    if((nowUnixInSeconds - ttlUnixInSeconds) < 5 * 60) {
+                        existsInCache = true
+                        break
+                    }
+                }
+            }
+
+            if(!existsInCache) cache = new Post[](cache, cachePost)
+        }
     }
 
     void CacheRepository:clearState() {

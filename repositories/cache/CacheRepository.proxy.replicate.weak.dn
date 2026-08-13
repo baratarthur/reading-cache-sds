@@ -1,7 +1,7 @@
 uses libs.utils.Constants
 
 
-component provides repositories.cache.CacheRepository(libs.adaptation.AdaptationLyfecicle), libs.krabs.RemotesHandler requires time.Timer timer, libs.utils.PostsUtils pu, libs.krabs.LatencyStore ls, data.IntUtil iu, libs.utils.Logger logger, libs.network.rpc.RPCUtil rpcUtil, data.json.JSONEncoder je {
+component provides repositories.cache.CacheRepository(libs.adaptation.AdaptationLyfecicle), libs.krabs.RemotesHandler requires time.Timer timer, libs.utils.PostsUtils pu, libs.krabs.LatencyStore ls, data.IntUtil iu, libs.utils.Logger logger, libs.network.rpc.RPCUtil rpcUtil, data.json.JSONEncoder je, libs.network.rpc.NonBlockRPC nbrpcLib {
 	static Address remotes[] = new Address[]()
 	
 	implementation RemotesHandler {
@@ -37,6 +37,14 @@ component provides repositories.cache.CacheRepository(libs.adaptation.Adaptation
 			char requestBody[] = je.jsonFromData(params)
 			Request req = new Request(buildMetaForMethod("addPostInCache"), requestBody)
 			anycast(req)
+			
+		}
+
+		void CacheRepository:addNewPostInCache(store Post cachePost) {
+			AddNewPostInCacheParamsFormat params = new AddNewPostInCacheParamsFormat(cachePost)
+			char requestBody[] = je.jsonFromData(params)
+			Request req = new Request(buildMetaForMethod("addNewPostInCache"), requestBody)
+			broadcast(req)
 			
 		}
 
@@ -82,53 +90,24 @@ component provides repositories.cache.CacheRepository(libs.adaptation.Adaptation
 		void CacheRepository:clearState() {
 			char requestBody[] = ""
 			Request req = new Request(buildMetaForMethod("clearState"), requestBody)
-			broadcastList(req)
+			nonBlockingBroadcastList(req)
 			
 		}
 
-		Response[] broadcastList(Request r) {
-			Response res[] = new Response[]()
-			for(int i = 0; i < remotes.arrayLength; i++) {
-				RequestWrapper reqWrapper = new RequestWrapper(remotes[i], r)
-				Response singleRes = rpcUtil.make(reqWrapper)
-				res = new Response[](res, singleRes)
-			}
-
-			return res
-		}
-
 		Response anycast(Request r) {
-			int i = addressPointer++ % remotes.arrayLength
+			int i = 0
+			mutex(pointerLock){ i = addressPointer++ % remotes.arrayLength }
 			RequestWrapper reqWrapper = new RequestWrapper(remotes[i], r)
 			return rpcUtil.make(reqWrapper)
 		}
 
-		void nonBlockingBroadcastList(Request r) {
-			Response res[] = new Response[]()
-			Thread threads[] = new Thread[]()
-			for(int i = 0; i < remotes.arrayLength; i++) {
-				Thread t = asynch::makeNonBlockingRequest(r, i)
-				threads = new Thread[](threads, t)
-			}
-
-			for(int i = 0; i < threads.arrayLength; i++) {
-				threads[i].join()
-			}
-
-		}
-
-		void makeNonBlockingRequest(Request r, int i) {
-			RequestWrapper reqWrapper = new RequestWrapper(remotes[i], r)
-			rpcUtil.make(reqWrapper)
+		Response[] nonBlockingBroadcastList(Request r) {
+			NonBlockRPC nbrpc = new NonBlockRPC()
+			return nbrpc.nonBlockingBroadcastList(r, remotes)
 		}
 
 		Response broadcast(Request r) {
-			Response res
-			for(int i = 0; i < remotes.arrayLength; i++) {
-				RequestWrapper reqWrapper = new RequestWrapper(remotes[i], r)
-				res = rpcUtil.make(reqWrapper)
-			}
-
+			Response res = nonBlockingBroadcastList(r)[0]
 			return res
 		}
 

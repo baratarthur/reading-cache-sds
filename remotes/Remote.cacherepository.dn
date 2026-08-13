@@ -51,6 +51,12 @@ component provides remotes.Remote:cacherepository requires net.TCPSocket, net.TC
 			return connection.buildResponse("addPostInCache", "200")
 		}
 
+		if(method == "addNewPostInCache") {
+			AddNewPostInCacheParamsFormat paramsData = je.jsonToData(req.content, typeof(AddNewPostInCacheParamsFormat))
+			remoteComponent.addNewPostInCache(paramsData.cachePost)
+			return connection.buildResponse("addNewPostInCache", "200")
+		}
+
 		if(method == "storeNewPosts") {
 			remoteComponent.storeNewPosts()
 			return connection.buildResponse("storeNewPosts", "200")

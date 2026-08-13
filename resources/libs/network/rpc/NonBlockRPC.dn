@@ -1,0 +1,5 @@
+uses libs.network.rpc.RPCUtil
+
+interface NonBlockRPC {
+    Response[] nonBlockingBroadcastList(Request r,  Address a[])
+}

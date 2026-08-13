@@ -200,7 +200,7 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
         
         Post newPost = new Post(0, createPostDTO.userId, 0, createPostDTO.content, new DateTime())
         ms.tickMetric(threadId, "cacheUpdateStartTime")
-        mutex(writingLock) { cacheRepo.addPostInCache(newPost) }
+        mutex(writingLock) { cacheRepo.addNewPostInCache(newPost) }
         ms.tickMetric(threadId, "cacheUpdateEndTime")
         
         return httpUtil.build201(req, "Success")

@@ -9,6 +9,10 @@ data AddPostInCacheParamsFormat {
     Post cachePost
 }
 
+data AddNewPostInCacheParamsFormat {
+    Post cachePost
+}
+
 data GetPostByIdFromCacheParamsFormat {
     int postId
 }
@@ -23,6 +27,7 @@ interface CacheRepository {
 
     void setPosts(store Post posts[])
     void addPostInCache(store Post cachePost)
+    void addNewPostInCache(store Post cachePost)
     void storeNewPosts()
     void removeNewPostsFromCache()
     CachedPost getPostByIdFromCache(store int postId)

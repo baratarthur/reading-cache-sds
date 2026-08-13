@@ -1,7 +1,7 @@
 uses libs.utils.Constants
 
 
-component provides repositories.cache.CacheRepository(libs.adaptation.AdaptationLyfecicle), libs.krabs.RemotesHandler requires time.Timer timer, libs.utils.PostsUtils pu, libs.krabs.LatencyStore ls, data.IntUtil iu, libs.utils.Logger logger, libs.network.rpc.RPCUtil rpcUtil, data.json.JSONEncoder je {
+component provides repositories.cache.CacheRepository(libs.adaptation.AdaptationLyfecicle), libs.krabs.RemotesHandler requires time.Timer timer, libs.utils.PostsUtils pu, libs.krabs.LatencyStore ls, data.IntUtil iu, libs.utils.Logger logger, libs.network.rpc.RPCUtil rpcUtil, data.json.JSONEncoder je, libs.network.rpc.NonBlockRPC nbrpcLib {
 	static Address remotes[] = new Address[]()
 	
 	implementation RemotesHandler {
@@ -51,6 +51,14 @@ component provides repositories.cache.CacheRepository(libs.adaptation.Adaptation
 			
 		}
 
+		void CacheRepository:addNewPostInCache(store Post cachePost) {
+			AddNewPostInCacheParamsFormat params = new AddNewPostInCacheParamsFormat(cachePost)
+			char requestBody[] = je.jsonFromData(params)
+			Request req = new Request(buildMetaForMethod("addNewPostInCache"), requestBody)
+			hashcast(req, addressPointer++)
+			
+		}
+
 		void CacheRepository:storeNewPosts() {
 			char requestBody[] = ""
 			Request req = new Request(buildMetaForMethod("storeNewPosts"), requestBody)
@@ -77,15 +85,20 @@ component provides repositories.cache.CacheRepository(libs.adaptation.Adaptation
 		Post[] CacheRepository:getCachedPosts() {
 			char requestBody[] = ""
 			Request req = new Request(buildMetaForMethod("getCachedPosts"), requestBody)
-			Response res = anycast(req)
-			if (res.content == "{}") return null
-			return je.jsonToArray(res.content, typeof(Post[]))
+			Response res[] = nonBlockingBroadcastList(req)
+			Post returnValue[]
+			for(int i = 0; i < res.arrayLength; i++) {
+				Post partialValue[] = je.jsonToArray(res[i].content, typeof(Post[]))
+				returnValue = pu.accumulate(returnValue, partialValue)
+			}
+
+			return returnValue
 		}
 
 		Post[] CacheRepository:getPosts() {
 			char requestBody[] = ""
 			Request req = new Request(buildMetaForMethod("getPosts"), requestBody)
-			Response res[] = broadcastList(req)
+			Response res[] = nonBlockingBroadcastList(req)
 			Post returnValue[]
 			for(int i = 0; i < res.arrayLength; i++) {
 				Post partialValue[] = je.jsonToArray(res[i].content, typeof(Post[]))
@@ -98,48 +111,25 @@ component provides repositories.cache.CacheRepository(libs.adaptation.Adaptation
 		void CacheRepository:clearState() {
 			char requestBody[] = ""
 			Request req = new Request(buildMetaForMethod("clearState"), requestBody)
-			broadcastList(req)
+			nonBlockingBroadcastList(req)
 			
 		}
 
-		Response[] broadcastList(Request r) {
-			Response res[] = new Response[]()
-			for(int i = 0; i < remotes.arrayLength; i++) {
-				RequestWrapper reqWrapper = new RequestWrapper(remotes[i], r)
-				Response singleRes = rpcUtil.make(reqWrapper)
-				res = new Response[](res, singleRes)
-			}
-
-			return res
-		}
-
 		Response anycast(Request r) {
-			int i = addressPointer++ % remotes.arrayLength
+			int i = 0
+			mutex(pointerLock){ i = addressPointer++ % remotes.arrayLength }
 			RequestWrapper reqWrapper = new RequestWrapper(remotes[i], r)
 			return rpcUtil.make(reqWrapper)
 		}
 
-		void nonBlockingBroadcastList(Request r) {
-			Response res[] = new Response[]()
-			Thread threads[] = new Thread[]()
-			for(int i = 0; i < remotes.arrayLength; i++) {
-				Thread t = asynch::makeNonBlockingRequest(r, i)
-				threads = new Thread[](threads, t)
-			}
-
-			for(int i = 0; i < threads.arrayLength; i++) {
-				threads[i].join()
-			}
-
-		}
-
-		void makeNonBlockingRequest(Request r, int i) {
-			RequestWrapper reqWrapper = new RequestWrapper(remotes[i], r)
-			rpcUtil.make(reqWrapper)
+		Response[] nonBlockingBroadcastList(Request r) {
+			NonBlockRPC nbrpc = new NonBlockRPC()
+			return nbrpc.nonBlockingBroadcastList(r, remotes)
 		}
 
 		Response hashcast(Request r, int hashKey) {
-			int i = hashKey % remotes.arrayLength
+			int i = 0
+			mutex(pointerLock){ i = hashKey % remotes.arrayLength }
 			RequestWrapper reqWrapper = new RequestWrapper(remotes[i], r)
 			return rpcUtil.make(reqWrapper)
 		}

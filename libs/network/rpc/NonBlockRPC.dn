@@ -1,0 +1,23 @@
+component provides libs.network.rpc.NonBlockRPC requires libs.network.rpc.RPCUtil rpcUtil {
+    Response acc[] = new Response[]()
+
+    Response[] NonBlockRPC:nonBlockingBroadcastList(Request r, Address a[]) {
+        Thread threads[] = new Thread[]()
+        
+        for(int i = 0; i < a.arrayLength; i++) {
+            Thread t = asynch::makeNonBlockingRequest(r, a[i])
+            threads = new Thread[](threads, t)
+        }
+
+        for(int i = 0; i < threads.arrayLength; i++) {
+            threads[i].join()
+        }
+
+        return acc
+    }
+
+    void makeNonBlockingRequest(Request r, Address a) {
+        RequestWrapper reqWrapper = new RequestWrapper(a, r)
+        acc = new Response[](acc, rpcUtil.make(reqWrapper))
+    }
+}

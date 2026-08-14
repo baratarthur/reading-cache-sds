@@ -53,7 +53,7 @@ libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je, 
             if (cache[i].id == postId) {
                 int ttlUnixInSeconds = timeUnix.toUnixTime(cache[i].ttl)
                 int nowUnixInSeconds = timeUnix.toUnixTime(ic.getTime())
-                if((nowUnixInSeconds - ttlUnixInSeconds) < 5 * 60) {
+                if((nowUnixInSeconds - ttlUnixInSeconds) < 10 * 60) {
                     cachedPost.post = cache[i]
                     cachedPost.isInCache = true
                     break

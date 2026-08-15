@@ -27,12 +27,11 @@ component provides remotes.Remote:cacherepository requires net.TCPSocket, net.TC
 
 	void Remote:handleRequest(TCPSocket s) {
 		char requestContent[] = connection.receiveData(s)
-		if(requestContent == null) s.disconnect()
+		if(requestContent == null) return
 		Request req = connection.parseRequestFromString(requestContent)
 		Response res = process(req)
 		char rawResponse[] = connection.buildRawResponse(res)
 		s.send(rawResponse)
-		s.disconnect()
 	}
 
 	Response process(Request req) {

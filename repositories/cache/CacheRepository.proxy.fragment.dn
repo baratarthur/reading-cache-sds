@@ -1,16 +1,45 @@
 uses libs.utils.Constants
 
 
-component provides repositories.cache.CacheRepository(libs.adaptation.AdaptationLyfecicle), libs.krabs.RemotesHandler requires time.Timer timer, libs.utils.PostsUtils pu, libs.krabs.LatencyStore ls, data.IntUtil iu, libs.utils.Logger logger, libs.network.rpc.RPCUtil rpcUtil, data.json.JSONEncoder je, libs.network.rpc.NonBlockRPC nbrpcLib {
-	static Address remotes[] = new Address[]()
+component provides repositories.cache.CacheRepository(libs.adaptation.AdaptationLyfecicle), libs.network.RemotesHandler requires time.Timer timer, libs.utils.PostsUtils pu, libs.krabs.LatencyStore ls, data.IntUtil iu, libs.utils.Logger logger, libs.network.rpc.RPCUtil rpcUtil, data.json.JSONEncoder je, net.TCPSocket tcpSocket, libs.network.rpc.NonBlockRPC nbrpcLib {
+	static Pool connectionPool[] = new Pool[]()
 	
 	implementation RemotesHandler {
+		const int POOL_SIZE = 6
+		
 		void RemotesHandler:setRemotes(store Address newRemotes[]) {
-			remotes = newRemotes
+			for(int i = 0; i < newRemotes.arrayLength; i++) {
+				TCPSocket remoteSockets[] = new TCPSocket[]()
+				Mutex remoteLocks[] = new Mutex[]()
+				for(int j = 0; j < POOL_SIZE; j++) {
+					TCPSocket s = new TCPSocket()
+					Mutex lock = new Mutex()
+					if(!s.connect(newRemotes[i].name, newRemotes[i].port)) {
+						logger.error("Error: failed to connect to remote $(newRemotes[i].name):$(iu.makeString(newRemotes[i].port))")
+						return
+					}
+
+					remoteSockets = new TCPSocket[](remoteSockets, s)
+					remoteLocks = new Mutex[](remoteLocks, lock)
+				}
+
+				Pool p = new Pool(remoteSockets, remoteLocks, 0)
+				connectionPool = new Pool[](connectionPool, p)
+			}
+
 		}
 
-		Address[] RemotesHandler:getRemotes() {
-			return remotes
+		void RemotesHandler:disconnectAll() {
+			for(int i = 0; i < connectionPool.arrayLength; i++) {
+				for(int j = 0; j < connectionPool[i].sockets.arrayLength; j++) {
+					mutex(connectionPool[i].locks[j]) {
+						connectionPool[i].sockets[j].disconnect()
+					}
+
+				}
+
+			}
+
 		}
 
 	}
@@ -25,7 +54,7 @@ component provides repositories.cache.CacheRepository(libs.adaptation.Adaptation
 		}
 
 		void CacheRepository:setPosts(store Post posts[]) {
-			int spaceSize = remotes.arrayLength
+			int spaceSize = connectionPool.arrayLength
 			for(int i = 0; i < spaceSize; i++) {
 				Post subset[] = new Post[]()
 				for(int j = 0; j < posts.arrayLength; j++) {
@@ -117,21 +146,19 @@ component provides repositories.cache.CacheRepository(libs.adaptation.Adaptation
 
 		Response anycast(Request r) {
 			int i = 0
-			mutex(pointerLock){ i = addressPointer++ % remotes.arrayLength }
-			RequestWrapper reqWrapper = new RequestWrapper(remotes[i], r)
-			return rpcUtil.make(reqWrapper)
+			mutex(pointerLock){ i = addressPointer++ % connectionPool[i].arrayLength }
+			return rpcUtil.make(r, connectionPool[i])
 		}
 
 		Response[] nonBlockingBroadcastList(Request r) {
 			NonBlockRPC nbrpc = new NonBlockRPC()
-			return nbrpc.nonBlockingBroadcastList(r, remotes)
+			return nbrpc.nonBlockingBroadcastList(r, connectionPool)
 		}
 
 		Response hashcast(Request r, int hashKey) {
 			int i = 0
-			mutex(pointerLock){ i = hashKey % remotes.arrayLength }
-			RequestWrapper reqWrapper = new RequestWrapper(remotes[i], r)
-			return rpcUtil.make(reqWrapper)
+			mutex(pointerLock){ i = hashKey % connectionPool.arrayLength }
+			return rpcUtil.make(r, connectionPool[i])
 		}
 
 		bool AdaptationLyfecicle:onLoadRemoteState() {

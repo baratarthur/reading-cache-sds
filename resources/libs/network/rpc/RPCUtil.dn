@@ -1,4 +1,5 @@
 uses net.TCPSocket
+uses libs.network.RemotesHandler
 
 data Address {
     char name[]
@@ -15,11 +16,6 @@ data TransactionData {
     char value[]
 }
 
-data RequestWrapper {
-    Address to
-    Request r
-}
-
 data Request {
     Metadata meta[]
     char content[]
@@ -31,7 +27,7 @@ data Response {
 }
 
 interface RPCUtil {
-    Response make(RequestWrapper r)
+    Response make(Request r, Pool p)
     Request parseRequestFromString(char requestString[])
     bool sendData(TCPSocket s, char requestContent[])
     char[] receiveData(TCPSocket s)

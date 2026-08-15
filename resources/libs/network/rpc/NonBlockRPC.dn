@@ -1,5 +1,6 @@
 uses libs.network.rpc.RPCUtil
+uses libs.network.RemotesHandler
 
 interface NonBlockRPC {
-    Response[] nonBlockingBroadcastList(Request r,  Address a[])
+    Response[] nonBlockingBroadcastList(Request r,  Pool p[])
 }

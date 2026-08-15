@@ -33,6 +33,7 @@ data Response {
 interface RPCUtil {
     Response make(RequestWrapper r)
     Request parseRequestFromString(char requestString[])
+    bool sendData(TCPSocket s, char requestContent[])
     char[] receiveData(TCPSocket s)
     char[] buildRawResponse(Response r)
     Response buildResponse(char method[], char status[])

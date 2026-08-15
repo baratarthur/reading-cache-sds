@@ -16,24 +16,18 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
     CacheRepository cacheRepo
     LoadedComponents repoComponents[] = new LoadedComponents[](
         loader.load("repositories/cache/CacheRepository.o"),
-        loader.load("repositories/cache/CacheRepository.proxy.replicate.strong.o"),
-        loader.load("repositories/cache/CacheRepository.proxy.replicate.weak.o"),
-        loader.load("repositories/cache/CacheRepository.proxy.fragment.strong.o"),
-        loader.load("repositories/cache/CacheRepository.proxy.fragment.weak.o")
+        loader.load("repositories/cache/CacheRepository.proxy.replicate.o"),
+        loader.load("repositories/cache/CacheRepository.proxy.fragment.o")
     )
     String names[] = new String[](
         new String("CacheRepository"),
-        new String("CacheRepository with strong replication"), 
-        new String("CacheRepository with weak replication"),
-        new String("CacheRepository with strong fragmentation"), 
-        new String("CacheRepository with weak fragmentation")
+        new String("CacheRepository with replication"), 
+        new String("CacheRepository with fragmentation")
     )
     String remoteNames[] = new String[](
         new String("cache-repository"),
-        new String("cache-repository-replicate-strong"),
-        new String("cache-repository-replicate-weak"),
-        new String("cache-repository-fragment-strong"),
-        new String("cache-repository-fragment-weak")
+        new String("cache-repository-replicate"),
+        new String("cache-repository-fragment")
     )
     int lastComponentIndex = 0
     bool serviceStatus = false
@@ -41,7 +35,6 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
 
     Mutex writingLock = new Mutex()
 
-        
     void Destructor:destroy() {
         serviceStatus = false
     }

@@ -5,13 +5,11 @@ component provides repositories.cache.CacheRepository(libs.adaptation.Adaptation
 	static Pool connectionPool[] = new Pool[]()
 	
 	implementation RemotesHandler {
-		const int POOL_SIZE = 6
-		
 		void RemotesHandler:setRemotes(store Address newRemotes[]) {
 			for(int i = 0; i < newRemotes.arrayLength; i++) {
 				TCPSocket remoteSockets[] = new TCPSocket[]()
 				Mutex remoteLocks[] = new Mutex[]()
-				for(int j = 0; j < POOL_SIZE; j++) {
+				for(int j = 0; j < Constants.CONNECTION_POOL_SIZE; j++) {
 					TCPSocket s = new TCPSocket()
 					Mutex lock = new Mutex()
 					if(!s.connect(newRemotes[i].name, newRemotes[i].port)) {
@@ -23,10 +21,11 @@ component provides repositories.cache.CacheRepository(libs.adaptation.Adaptation
 					remoteLocks = new Mutex[](remoteLocks, lock)
 				}
 
-				Pool p = new Pool(remoteSockets, remoteLocks, 0)
+				Pool p = new Pool(remoteSockets, remoteLocks)
 				connectionPool = new Pool[](connectionPool, p)
 			}
 
+			rpcUtil.setPoolSize(connectionPool.arrayLength)
 		}
 
 		void RemotesHandler:disconnectAll() {
@@ -147,7 +146,7 @@ component provides repositories.cache.CacheRepository(libs.adaptation.Adaptation
 		Response anycast(Request r) {
 			int i = 0
 			mutex(pointerLock){ i = addressPointer++ % connectionPool[i].arrayLength }
-			return rpcUtil.make(r, connectionPool[i])
+			return rpcUtil.make(r, connectionPool[i], i)
 		}
 
 		Response[] nonBlockingBroadcastList(Request r) {
@@ -158,7 +157,7 @@ component provides repositories.cache.CacheRepository(libs.adaptation.Adaptation
 		Response hashcast(Request r, int hashKey) {
 			int i = 0
 			mutex(pointerLock){ i = hashKey % connectionPool.arrayLength }
-			return rpcUtil.make(r, connectionPool[i])
+			return rpcUtil.make(r, connectionPool[i], i)
 		}
 
 		bool AdaptationLyfecicle:onLoadRemoteState() {

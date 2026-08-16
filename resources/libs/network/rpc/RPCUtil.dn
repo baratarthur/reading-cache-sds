@@ -29,11 +29,11 @@ data Response {
 data Pool {
     TCPSocket sockets[]
     Mutex locks[]
-    int roundRobinIndex
 }
 
 interface RPCUtil {
-    Response make(Request r, Pool p)
+    void setPoolSize(int size)
+    Response make(Request r, Pool p, int poolPosition)
     Request parseRequestFromString(char requestString[])
     bool sendData(TCPSocket s, char requestContent[])
     char[] receiveData(TCPSocket s)

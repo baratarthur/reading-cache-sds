@@ -41,6 +41,7 @@ component provides libs.network.rpc.RPCUtil requires data.json.JSONEncoder je, n
         else requestContent = je.jsonFromArray(req.meta)
 
         int accessIndex = roundRobinIndex[poolPosition]++ % Constants.CONNECTION_POOL_SIZE
+        logger.storeInfo("$debugMSG accessing component $(iu.makeString(poolPosition)) with socket $(iu.makeString(accessIndex))")
         mutex(locks[poolPosition][accessIndex]) {
             sendData(sockets[poolPosition][accessIndex], requestContent)
             responseContent = receiveData(sockets[poolPosition][accessIndex])

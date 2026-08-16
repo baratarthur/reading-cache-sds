@@ -18,10 +18,6 @@ component provides libs.network.rpc.RPCUtil requires data.json.JSONEncoder je, n
             for(int j = 0; j < Constants.CONNECTION_POOL_SIZE; j++) {
                 TCPSocket s = new TCPSocket()
                 Mutex lock = new Mutex()
-                if(!s.connect(newRemotes[i].name, newRemotes[i].port)) {
-                    logger.error("Error: failed to connect to remote $(newRemotes[i].name):$(iu.makeString(newRemotes[i].port))")
-                    return
-                }
                 logger.storeInfo("$debugMSG connected soccket $(iu.makeString(j)) of remote $(iu.makeString(i))")
                 sockets[i][j] = s
                 locks[i][j] = lock
@@ -31,20 +27,27 @@ component provides libs.network.rpc.RPCUtil requires data.json.JSONEncoder je, n
         }
     }
 
-    Response RPCUtil:make(Request req, int poolPosition) {
+    Response RPCUtil:make(ReqWrapper req) {
         DateTime startExecutionTime = ic.getTime()
         Response r = null
         char requestContent[] = null
         char responseContent[] = ""
 
-        if (req.content != null) requestContent = new char[](je.jsonFromArray(req.meta), Constants.SEPARATOR, req.content)
-        else requestContent = je.jsonFromArray(req.meta)
+        if (req.r.content != null) requestContent = new char[](je.jsonFromArray(req.r.meta), Constants.SEPARATOR, req.r.content)
+        else requestContent = je.jsonFromArray(req.r.meta)
 
-        int accessIndex = roundRobinIndex[poolPosition]++ % Constants.CONNECTION_POOL_SIZE
-        logger.storeInfo("$debugMSG accessing component $(iu.makeString(poolPosition)) with socket $(iu.makeString(accessIndex))")
-        mutex(locks[poolPosition][accessIndex]) {
-            sendData(sockets[poolPosition][accessIndex], requestContent)
-            responseContent = receiveData(sockets[poolPosition][accessIndex])
+        int accessIndex = roundRobinIndex[req.position]++ % Constants.CONNECTION_POOL_SIZE
+        
+        logger.storeInfo("$debugMSG accessing component $(iu.makeString(req.position)) with socket $(iu.makeString(accessIndex))")
+        
+        mutex(locks[req.position][accessIndex]) {
+            if(!sockets[req.position][accessIndex].connect(req.to.name, req.to.port)) {
+                logger.error("Error: failed to connect to remote $(req.to.name):$(iu.makeString(req.to.port))")
+                return null
+            }
+            sendData(sockets[req.position][accessIndex], requestContent)
+            responseContent = receiveData(sockets[req.position][accessIndex])
+            sockets[req.position][accessIndex].disconnect()
         }
 
         logger.storeInfo("$debugMSG message: $responseContent")

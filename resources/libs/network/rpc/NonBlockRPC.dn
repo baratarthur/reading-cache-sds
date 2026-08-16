@@ -1,5 +1,5 @@
 uses libs.network.rpc.RPCUtil
 
 interface NonBlockRPC {
-    Response[] nonBlockingBroadcastList(Request r, int remoteComponents)
+    Response[] nonBlockingBroadcastList(Request r, Address remotes[])
 }

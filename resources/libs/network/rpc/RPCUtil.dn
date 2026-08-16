@@ -26,14 +26,15 @@ data Response {
     char content[]
 }
 
-data Pool {
-    TCPSocket sockets[]
-    Mutex locks[]
+data ReqWrapper {
+    Request r
+    Address to
+    int position
 }
 
 interface RPCUtil {
     void setPoolSize(Address newRemotes[])
-    Response make(Request r, int poolPosition)
+    Response make(ReqWrapper req)
     Request parseRequestFromString(char requestString[])
     bool sendData(TCPSocket s, char requestContent[])
     char[] receiveData(TCPSocket s)

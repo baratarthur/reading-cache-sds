@@ -1,11 +1,4 @@
 uses libs.network.rpc.RPCUtil
-uses net.TCPSocket
-
-data Pool {
-    TCPSocket sockets[]
-    Mutex locks[]
-    int roundRobinIndex
-}
 
 interface RemotesHandler {
     void setRemotes(store Address newRemotes[])

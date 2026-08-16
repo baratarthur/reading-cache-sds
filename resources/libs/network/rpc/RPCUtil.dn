@@ -26,6 +26,12 @@ data Response {
     char content[]
 }
 
+data Pool {
+    TCPSocket sockets[]
+    Mutex locks[]
+    int roundRobinIndex
+}
+
 interface RPCUtil {
     Response make(Request r, Pool p)
     Request parseRequestFromString(char requestString[])

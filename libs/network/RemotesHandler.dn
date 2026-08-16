@@ -1,0 +1,9 @@
+component provides libs.network.RemotesHandler requires libs.network.rpc.RPCUtil {
+    void RemotesHandler:setRemotes(store Address newRemotes[]) {
+
+    }
+
+    void RemotesHandler:disconnectAll() {
+
+    }
+}

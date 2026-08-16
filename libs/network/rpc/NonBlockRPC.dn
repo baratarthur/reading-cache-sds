@@ -1,13 +1,13 @@
 uses libs.utils.Constants
 
-component provides libs.network.rpc.NonBlockRPC requires libs.network.rpc.RPCUtil rpcUtil, libs.network.RemotesHandler {
+component provides libs.network.rpc.NonBlockRPC requires libs.network.rpc.RPCUtil rpcUtil {
     Response acc[] = new Response[]()
 
-    Response[] NonBlockRPC:nonBlockingBroadcastList(Request r, Pool p[]) {
+    Response[] NonBlockRPC:nonBlockingBroadcastList(Request r, int remoteComponents) {
         Thread threads[] = new Thread[]()
         
-        for(int i = 0; i < p.arrayLength; i++) {
-            Thread t = asynch::makeNonBlockingRequest(r, p[i], i)
+        for(int i = 0; i < remoteComponents; i++) {
+            Thread t = asynch::makeNonBlockingRequest(r, i)
             threads = new Thread[](threads, t)
         }
 
@@ -18,7 +18,7 @@ component provides libs.network.rpc.NonBlockRPC requires libs.network.rpc.RPCUti
         return acc
     }
 
-    void makeNonBlockingRequest(Request r, Pool p, int poolPosition) {
-        acc = new Response[](acc, rpcUtil.make(r, p, poolPosition))
+    void makeNonBlockingRequest(Request r, int poolPosition) {
+        acc = new Response[](acc, rpcUtil.make(r, poolPosition))
     }
 }

@@ -32,8 +32,8 @@ data Pool {
 }
 
 interface RPCUtil {
-    void setPoolSize(int size)
-    Response make(Request r, Pool p, int poolPosition)
+    void setPoolSize(Address newRemotes[])
+    Response make(Request r, int poolPosition)
     Request parseRequestFromString(char requestString[])
     bool sendData(TCPSocket s, char requestContent[])
     char[] receiveData(TCPSocket s)

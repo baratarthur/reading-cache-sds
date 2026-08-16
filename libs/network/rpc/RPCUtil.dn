@@ -6,24 +6,44 @@ component provides libs.network.rpc.RPCUtil requires data.json.JSONEncoder je, n
     data.IntUtil iu, data.StringUtil su, time.Calendar ic, time.TimeUnix timeUnix, libs.krabs.LatencyStore ls,
     libs.utils.Logger logger, time.Timer timer {
     static int roundRobinIndex[] = new int[]()
+    static TCPSocket sockets[][]
+    static Mutex locks[][]
     
-    void RPCUtil:setPoolSize(int size) {
-        for(int i = 0; i < size; i++) { roundRobinIndex = new int[](roundRobinIndex, 0) }
+    void RPCUtil:setPoolSize(Address newRemotes[]) {
+        int amountOfComponents = newRemotes.arrayLength
+        sockets = new TCPSocket[amountOfComponents][Constants.CONNECTION_POOL_SIZE]
+        locks = new Mutex[amountOfComponents][Constants.CONNECTION_POOL_SIZE]
+        
+        for(int i = 0; i < amountOfComponents; i++) {            
+            for(int j = 0; j < Constants.CONNECTION_POOL_SIZE; j++) {
+                TCPSocket s = new TCPSocket()
+                Mutex lock = new Mutex()
+                if(!s.connect(newRemotes[i].name, newRemotes[i].port)) {
+                    logger.error("Error: failed to connect to remote $(newRemotes[i].name):$(iu.makeString(newRemotes[i].port))")
+                    return
+                }
+                logger.storeInfo("$debugMSG connected soccket $(iu.makeString(j)) of remote $(iu.makeString(i))")
+                sockets[i][j] = s
+                locks[i][j] = lock
+            }
+
+            roundRobinIndex = new int[](roundRobinIndex, 0)
+        }
     }
 
-    Response RPCUtil:make(Request req, Pool p, int poolPosition) {
+    Response RPCUtil:make(Request req, int poolPosition) {
         DateTime startExecutionTime = ic.getTime()
         Response r = null
         char requestContent[] = null
+        char responseContent[] = ""
 
         if (req.content != null) requestContent = new char[](je.jsonFromArray(req.meta), Constants.SEPARATOR, req.content)
         else requestContent = je.jsonFromArray(req.meta)
 
         int accessIndex = roundRobinIndex[poolPosition]++ % Constants.CONNECTION_POOL_SIZE
-        char responseContent[] = ""
-        mutex(p.locks[accessIndex]) {
-            sendData(p.sockets[accessIndex], requestContent)
-            responseContent = receiveData(p.sockets[accessIndex])
+        mutex(locks[poolPosition][accessIndex]) {
+            sendData(sockets[poolPosition][accessIndex], requestContent)
+            responseContent = receiveData(sockets[poolPosition][accessIndex])
         }
 
         String rpcData[] = su.explode(responseContent, Constants.SEPARATOR)

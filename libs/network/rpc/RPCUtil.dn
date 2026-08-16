@@ -47,6 +47,8 @@ component provides libs.network.rpc.RPCUtil requires data.json.JSONEncoder je, n
             responseContent = receiveData(sockets[poolPosition][accessIndex])
         }
 
+        logger.storeInfo("$debugMSG message: $responseContent")
+
         String rpcData[] = su.explode(responseContent, Constants.SEPARATOR)
         Metadata meta[] = je.jsonToArray(rpcData[0].string, typeof(Metadata[]))
         

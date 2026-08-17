@@ -35,7 +35,7 @@ component provides libs.network.rpc.RPCUtil requires data.json.JSONEncoder je, n
         socket.disconnect()
 
         
-        logger.storeInfo("{\"timeToGetSocket\": \"$(iu.makeString(timeToGetSocket))\", \"timestampBeforeConnection\": \"$(iu.makeString(timestampBeforeConnection))\", \"timestampBeforeSendData\": \"$(iu.makeString(timestampBeforeSendData))\", \"timestampBeforeReceiveData\": \"$(iu.makeString(timestampBeforeReceiveData))\"}")
+        logger.storeInfo("{\"timeToGetSocket\": \"$(iu.makeString(timeToGetSocket))\", \"timeToConnect\": \"$(iu.makeString(timeToConnect))\", \"timeToSendData\": \"$(iu.makeString(timeToSendData))\", \"timeToReceiveData\": \"$(iu.makeString(timeToReceiveData))\"}")
 
         String rpcData[] = su.explode(responseContent, Constants.SEPARATOR)
         Metadata meta[] = je.jsonToArray(rpcData[0].string, typeof(Metadata[]))

@@ -6,7 +6,6 @@ component provides repositories.cache.CacheRepository(libs.adaptation.Adaptation
 	
 	implementation RemotesHandler {
 		void RemotesHandler:setRemotes(store Address newRemotes[]) {
-			rpcUtil.setPoolSize(newRemotes)
 			remotes = newRemotes
 		}
 

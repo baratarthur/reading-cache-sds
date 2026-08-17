@@ -33,7 +33,7 @@ data ReqWrapper {
 }
 
 interface RPCUtil {
-    void setPoolSize(Address newRemotes[])
+    // void setPoolSize(Address newRemotes[])
     Response make(ReqWrapper req)
     Request parseRequestFromString(char requestString[])
     bool sendData(TCPSocket s, char requestContent[])

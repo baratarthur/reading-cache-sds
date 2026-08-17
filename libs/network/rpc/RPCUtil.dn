@@ -6,7 +6,9 @@ component provides libs.network.rpc.RPCUtil requires data.json.JSONEncoder je, n
     data.IntUtil iu, data.StringUtil su, time.Calendar ic, time.TimeUnix timeUnix, libs.krabs.LatencyStore ls,
     libs.utils.Logger logger, time.Timer timer {
 
-    Response RPCUtil:make(ReqWrapper req) {
+    Response RPCUtil:make(ReqWrapper req, DateTime timeBeforeAccessComponent) {
+        int timeToAccessRPCUtil = ls.getMilisecondsExecutionTimeSince(timeBeforeAccessComponent)
+
         DateTime timestampBeforeSocket = ic.getTime()
         TCPSocket socket = new TCPSocket()
         int timeToGetSocket = ls.getMilisecondsExecutionTimeSince(timestampBeforeSocket)
@@ -35,7 +37,7 @@ component provides libs.network.rpc.RPCUtil requires data.json.JSONEncoder je, n
         socket.disconnect()
 
         
-        logger.storeInfo("{\"timeToGetSocket\": \"$(iu.makeString(timeToGetSocket))\", \"timeToConnect\": \"$(iu.makeString(timeToConnect))\", \"timeToSendData\": \"$(iu.makeString(timeToSendData))\", \"timeToReceiveData\": \"$(iu.makeString(timeToReceiveData))\"}")
+        logger.storeInfo("{\"timeToAccess\": \"$(iu.makeString(timeToAccessRPCUtil))\"}")
 
         String rpcData[] = su.explode(responseContent, Constants.SEPARATOR)
         Metadata meta[] = je.jsonToArray(rpcData[0].string, typeof(Metadata[]))

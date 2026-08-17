@@ -1,4 +1,5 @@
 uses net.TCPSocket
+uses time.Calendar
 uses libs.network.RemotesHandler
 
 data Address {
@@ -33,8 +34,7 @@ data ReqWrapper {
 }
 
 interface RPCUtil {
-    // void setPoolSize(Address newRemotes[])
-    Response make(ReqWrapper req)
+    Response make(ReqWrapper req, DateTime timeBeforeAccessComponent)
     Request parseRequestFromString(char requestString[])
     bool sendData(TCPSocket s, char requestContent[])
     char[] receiveData(TCPSocket s)

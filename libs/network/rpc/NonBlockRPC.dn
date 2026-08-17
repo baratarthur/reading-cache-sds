@@ -1,6 +1,6 @@
 uses libs.utils.Constants
 
-component provides libs.network.rpc.NonBlockRPC requires libs.network.rpc.RPCUtil rpcUtil {
+component provides libs.network.rpc.NonBlockRPC requires libs.network.rpc.RPCUtil rpcUtil, time.Calendar ic {
     Response acc[] = new Response[]()
 
     Response[] NonBlockRPC:nonBlockingBroadcastList(Request r, Address remotes[]) {
@@ -20,6 +20,7 @@ component provides libs.network.rpc.NonBlockRPC requires libs.network.rpc.RPCUti
     }
 
     void makeNonBlockingRequest(ReqWrapper w) {
-        acc = new Response[](acc, rpcUtil.make(w))
+        DateTime timestampBeforeAccessComponent = ic.getTime()
+        acc = new Response[](acc, rpcUtil.make(w, timestampBeforeAccessComponent))
     }
 }

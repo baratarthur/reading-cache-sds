@@ -67,8 +67,8 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
     int queueRobbinPointer = 0
 
     void handleData(TCPSocket client) {
-        int j = queueRobbinPointer++ % 10
-        processingQueues[j].add(client)
+        int i = queueRobbinPointer++ % 10
+        processingQueues[i].add(client)
     }
     
     void Server:handleRequest(int queueIndex) {

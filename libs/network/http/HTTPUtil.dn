@@ -1,7 +1,7 @@
 const char debugMSG[] = "[@HTTPUtil]"
 
 component provides libs.network.http.HTTPUtil requires data.IntUtil iu, io.FileSystem fileSystem, 
-	data.StringUtil stringUtil {
+	data.StringUtil stringUtil, libs.utils.Logger logger {
     
     HTTPMessage HTTPUtil:readHeader(store TCPSocket s) {
         HTTPMessage httpHeader = null
@@ -19,6 +19,7 @@ component provides libs.network.http.HTTPUtil requires data.IntUtil iu, io.FileS
                 break
             }
         }
+		logger.storeInfo("command: ====\n $command")
         if (httpHeader == null) { s.disconnect() }
         else { httpHeader.socket = s }
 
@@ -256,6 +257,7 @@ component provides libs.network.http.HTTPUtil requires data.IntUtil iu, io.FileS
 		request.socket.send(response.body)
         // logger.info(response.body)
         // logger.info("$debugMSG - END RESPONSE CONTENT")
+		request.socket.disconnect()
     }
 
 }

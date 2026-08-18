@@ -35,6 +35,8 @@ WORKDIR /app
 RUN chmod +x /app/scripts/run.sh
 RUN chmod +x /app/scripts/build/compile.sh
 
+RUN pip3 install -r sds-proxy-generator/requirements.txt
+
 RUN /app/scripts/build/compile.sh
 
 # ENV MODE=1

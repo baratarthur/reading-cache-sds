@@ -3,7 +3,7 @@ uses libs.utils.Constants
 const char debugMSG[] = "[@Remote]"
 
 
-component provides remotes.Remote:cacherepository requires net.TCPSocket, net.TCPServerSocket, data.json.JSONEncoder je, time.Timer timer, libs.utils.PostsUtils pu, libs.krabs.LatencyStore ls, time.Calendar ic, data.IntUtil iu, libs.utils.Logger logger, libs.network.rpc.RPCUtil connection, repositories.cache.CacheRepository remoteComponent {
+component provides remotes.Remote:cacherepository requires net.TCPSocket, net.TCPServerSocket, data.json.JSONEncoder je, time.Timer timer, libs.utils.PostsUtils pu, libs.krabs.LatencyStore ls, data.IntUtil iu, libs.utils.Logger logger, libs.network.rpc.RPCUtil connection, repositories.cache.CacheRepository remoteComponent {
 	bool serviceStatus = false
 	
 

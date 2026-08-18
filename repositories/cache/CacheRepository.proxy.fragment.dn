@@ -1,7 +1,7 @@
 uses libs.utils.Constants
 
 
-component provides repositories.cache.CacheRepository(libs.adaptation.AdaptationLyfecicle), libs.network.RemotesHandler requires time.Timer timer, libs.utils.PostsUtils pu, libs.krabs.LatencyStore ls, time.Calendar ic, data.IntUtil iu, libs.utils.Logger logger, libs.network.rpc.RPCUtil rpcUtil, data.json.JSONEncoder je, net.TCPSocket tcpSocket, libs.network.rpc.NonBlockRPC nbrpcLib {
+component provides repositories.cache.CacheRepository(libs.adaptation.AdaptationLyfecicle), libs.network.RemotesHandler requires time.Timer timer, libs.utils.PostsUtils pu, libs.krabs.LatencyStore ls, data.IntUtil iu, libs.utils.Logger logger, libs.network.rpc.RPCUtil rpcUtil, data.json.JSONEncoder je, net.TCPSocket tcpSocket, libs.network.rpc.NonBlockRPC nbrpcLib {
 	static Address remotes[] = new Address[]()
 	
 	implementation RemotesHandler {
@@ -47,7 +47,6 @@ component provides repositories.cache.CacheRepository(libs.adaptation.Adaptation
 			char requestBody[] = je.jsonFromData(params)
 			Request req = new Request(buildMetaForMethod("addPostInCache"), requestBody)
 			hashcast(req, cachePost.id)
-			
 		}
 
 		void CacheRepository:addNewPostInCache(store Post cachePost) {
@@ -55,21 +54,18 @@ component provides repositories.cache.CacheRepository(libs.adaptation.Adaptation
 			char requestBody[] = je.jsonFromData(params)
 			Request req = new Request(buildMetaForMethod("addNewPostInCache"), requestBody)
 			hashcast(req, addressPointer++)
-			
 		}
 
 		void CacheRepository:storeNewPosts() {
 			char requestBody[] = ""
 			Request req = new Request(buildMetaForMethod("storeNewPosts"), requestBody)
 			nonBlockingBroadcastList(req)
-			
 		}
 
 		void CacheRepository:removeNewPostsFromCache() {
 			char requestBody[] = ""
 			Request req = new Request(buildMetaForMethod("removeNewPostsFromCache"), requestBody)
 			nonBlockingBroadcastList(req)
-			
 		}
 
 		CachedPost CacheRepository:getPostByIdFromCache(store int postId) {
@@ -111,15 +107,13 @@ component provides repositories.cache.CacheRepository(libs.adaptation.Adaptation
 			char requestBody[] = ""
 			Request req = new Request(buildMetaForMethod("clearState"), requestBody)
 			nonBlockingBroadcastList(req)
-			
 		}
 
 		Response anycast(Request r) {
 			int i = 0
 			mutex(pointerLock){ i = addressPointer++ % remotes.arrayLength }
 			ReqWrapper w = new ReqWrapper(r, remotes[i], i)
-			DateTime timestampBeforeAccessComponent = ic.getTime()
-			return rpcUtil.make(w, timestampBeforeAccessComponent)
+			return rpcUtil.make(w)
 		}
 
 		Response[] nonBlockingBroadcastList(Request r) {
@@ -129,10 +123,9 @@ component provides repositories.cache.CacheRepository(libs.adaptation.Adaptation
 
 		Response hashcast(Request r, int hashKey) {
 			int i = 0
-			mutex(pointerLock){ i = hashKey % remotes.arrayLength }
+			i = hashKey % remotes.arrayLength
 			ReqWrapper w = new ReqWrapper(r, remotes[i], i)
-			DateTime timestampBeforeAccessComponent = ic.getTime()
-			return rpcUtil.make(w, timestampBeforeAccessComponent)
+			return rpcUtil.make(w)
 		}
 
 		bool AdaptationLyfecicle:onLoadRemoteState() {

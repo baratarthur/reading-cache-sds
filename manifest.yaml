@@ -21,10 +21,10 @@ spec:
         resources:
           limits:
             memory: "1Gi"
-            cpu: 1
+            cpu: 2
           requests:
             memory: "1Gi"
-            cpu: 1
+            cpu: 2
         ports:
         - containerPort: 8080
         env:

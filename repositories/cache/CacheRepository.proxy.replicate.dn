@@ -24,169 +24,70 @@ component provides repositories.cache.CacheRepository(libs.adaptation.Adaptation
 		}
 
 		void CacheRepository:setPosts(store Post posts[]) {
-			DateTime timeBeforeParamPacking = ic.getTime()
 			SetPostsParamsFormat params = new SetPostsParamsFormat(posts)
-			int timeToProcessParamPacking = ls.getMilisecondsExecutionTimeSince(timeBeforeParamPacking)
-			DateTime timeBeforeParsing = ic.getTime()
 			char requestBody[] = je.jsonFromData(params)
-			int timeToProcessParsing = ls.getMilisecondsExecutionTimeSince(timeBeforeParsing)
-			DateTime timeBeforeRequestMount = ic.getTime()
 			Request req = new Request(buildMetaForMethod("setPosts"), requestBody)
-			int timeToProcessRequestMount = ls.getMilisecondsExecutionTimeSince(timeBeforeRequestMount)
-			DateTime timeBeforeMethodCall = ic.getTime()
 			broadcast(req)
-			int timeToProcessMethodCall = ls.getMilisecondsExecutionTimeSince(timeBeforeMethodCall)
-			DateTime timeBeforeParseReturn = ic.getTime()
-			int timeToProcessReturnParsing = ls.getMilisecondsExecutionTimeSince(timeBeforeParseReturn)
-			logger.storeInfo("{\"timeToProcessParamPacking\": \"$(iu.makeString(timeToProcessParamPacking))\", \"timeToProcessParsing\": \"$(iu.makeString(timeToProcessParsing))\", \"timeToProcessRequestMount\": \"$(iu.makeString(timeToProcessRequestMount))\", \"timeToProcessMethodCall\": \"$(iu.makeString(timeToProcessMethodCall))\", \"timeToProcessReturnParsing\": \"$(iu.makeString(timeToProcessReturnParsing))\"}")
 		}
 
 		void CacheRepository:addPostInCache(store Post cachePost) {
-			DateTime timeBeforeParamPacking = ic.getTime()
 			AddPostInCacheParamsFormat params = new AddPostInCacheParamsFormat(cachePost)
-			int timeToProcessParamPacking = ls.getMilisecondsExecutionTimeSince(timeBeforeParamPacking)
-			DateTime timeBeforeParsing = ic.getTime()
 			char requestBody[] = je.jsonFromData(params)
-			int timeToProcessParsing = ls.getMilisecondsExecutionTimeSince(timeBeforeParsing)
-			DateTime timeBeforeRequestMount = ic.getTime()
 			Request req = new Request(buildMetaForMethod("addPostInCache"), requestBody)
-			int timeToProcessRequestMount = ls.getMilisecondsExecutionTimeSince(timeBeforeRequestMount)
-			DateTime timeBeforeMethodCall = ic.getTime()
 			broadcast(req)
-			int timeToProcessMethodCall = ls.getMilisecondsExecutionTimeSince(timeBeforeMethodCall)
-			DateTime timeBeforeParseReturn = ic.getTime()
-			int timeToProcessReturnParsing = ls.getMilisecondsExecutionTimeSince(timeBeforeParseReturn)
-			logger.storeInfo("{\"timeToProcessParamPacking\": \"$(iu.makeString(timeToProcessParamPacking))\", \"timeToProcessParsing\": \"$(iu.makeString(timeToProcessParsing))\", \"timeToProcessRequestMount\": \"$(iu.makeString(timeToProcessRequestMount))\", \"timeToProcessMethodCall\": \"$(iu.makeString(timeToProcessMethodCall))\", \"timeToProcessReturnParsing\": \"$(iu.makeString(timeToProcessReturnParsing))\"}")
 		}
 
 		void CacheRepository:addNewPostInCache(store Post cachePost) {
-			DateTime timeBeforeParamPacking = ic.getTime()
 			AddNewPostInCacheParamsFormat params = new AddNewPostInCacheParamsFormat(cachePost)
-			int timeToProcessParamPacking = ls.getMilisecondsExecutionTimeSince(timeBeforeParamPacking)
-			DateTime timeBeforeParsing = ic.getTime()
 			char requestBody[] = je.jsonFromData(params)
-			int timeToProcessParsing = ls.getMilisecondsExecutionTimeSince(timeBeforeParsing)
-			DateTime timeBeforeRequestMount = ic.getTime()
 			Request req = new Request(buildMetaForMethod("addNewPostInCache"), requestBody)
-			int timeToProcessRequestMount = ls.getMilisecondsExecutionTimeSince(timeBeforeRequestMount)
-			DateTime timeBeforeMethodCall = ic.getTime()
 			broadcast(req)
-			int timeToProcessMethodCall = ls.getMilisecondsExecutionTimeSince(timeBeforeMethodCall)
-			DateTime timeBeforeParseReturn = ic.getTime()
-			int timeToProcessReturnParsing = ls.getMilisecondsExecutionTimeSince(timeBeforeParseReturn)
-			logger.storeInfo("{\"timeToProcessParamPacking\": \"$(iu.makeString(timeToProcessParamPacking))\", \"timeToProcessParsing\": \"$(iu.makeString(timeToProcessParsing))\", \"timeToProcessRequestMount\": \"$(iu.makeString(timeToProcessRequestMount))\", \"timeToProcessMethodCall\": \"$(iu.makeString(timeToProcessMethodCall))\", \"timeToProcessReturnParsing\": \"$(iu.makeString(timeToProcessReturnParsing))\"}")
 		}
 
 		void CacheRepository:storeNewPosts() {
-			DateTime timeBeforeParamPacking = ic.getTime()
-			int timeToProcessParamPacking = ls.getMilisecondsExecutionTimeSince(timeBeforeParamPacking)
-			DateTime timeBeforeParsing = ic.getTime()
 			char requestBody[] = ""
-			int timeToProcessParsing = ls.getMilisecondsExecutionTimeSince(timeBeforeParsing)
-			DateTime timeBeforeRequestMount = ic.getTime()
 			Request req = new Request(buildMetaForMethod("storeNewPosts"), requestBody)
-			int timeToProcessRequestMount = ls.getMilisecondsExecutionTimeSince(timeBeforeRequestMount)
-			DateTime timeBeforeMethodCall = ic.getTime()
 			anycast(req)
-			int timeToProcessMethodCall = ls.getMilisecondsExecutionTimeSince(timeBeforeMethodCall)
-			DateTime timeBeforeParseReturn = ic.getTime()
-			int timeToProcessReturnParsing = ls.getMilisecondsExecutionTimeSince(timeBeforeParseReturn)
-			logger.storeInfo("{\"timeToProcessParamPacking\": \"$(iu.makeString(timeToProcessParamPacking))\", \"timeToProcessParsing\": \"$(iu.makeString(timeToProcessParsing))\", \"timeToProcessRequestMount\": \"$(iu.makeString(timeToProcessRequestMount))\", \"timeToProcessMethodCall\": \"$(iu.makeString(timeToProcessMethodCall))\", \"timeToProcessReturnParsing\": \"$(iu.makeString(timeToProcessReturnParsing))\"}")
 		}
 
 		void CacheRepository:removeNewPostsFromCache() {
-			DateTime timeBeforeParamPacking = ic.getTime()
-			int timeToProcessParamPacking = ls.getMilisecondsExecutionTimeSince(timeBeforeParamPacking)
-			DateTime timeBeforeParsing = ic.getTime()
 			char requestBody[] = ""
-			int timeToProcessParsing = ls.getMilisecondsExecutionTimeSince(timeBeforeParsing)
-			DateTime timeBeforeRequestMount = ic.getTime()
 			Request req = new Request(buildMetaForMethod("removeNewPostsFromCache"), requestBody)
-			int timeToProcessRequestMount = ls.getMilisecondsExecutionTimeSince(timeBeforeRequestMount)
-			DateTime timeBeforeMethodCall = ic.getTime()
 			broadcast(req)
-			int timeToProcessMethodCall = ls.getMilisecondsExecutionTimeSince(timeBeforeMethodCall)
-			DateTime timeBeforeParseReturn = ic.getTime()
-			int timeToProcessReturnParsing = ls.getMilisecondsExecutionTimeSince(timeBeforeParseReturn)
-			logger.storeInfo("{\"timeToProcessParamPacking\": \"$(iu.makeString(timeToProcessParamPacking))\", \"timeToProcessParsing\": \"$(iu.makeString(timeToProcessParsing))\", \"timeToProcessRequestMount\": \"$(iu.makeString(timeToProcessRequestMount))\", \"timeToProcessMethodCall\": \"$(iu.makeString(timeToProcessMethodCall))\", \"timeToProcessReturnParsing\": \"$(iu.makeString(timeToProcessReturnParsing))\"}")
 		}
 
 		CachedPost CacheRepository:getPostByIdFromCache(store int postId) {
-			DateTime timeBeforeParamPacking = ic.getTime()
 			GetPostByIdFromCacheParamsFormat params = new GetPostByIdFromCacheParamsFormat(postId)
-			int timeToProcessParamPacking = ls.getMilisecondsExecutionTimeSince(timeBeforeParamPacking)
-			DateTime timeBeforeParsing = ic.getTime()
 			char requestBody[] = je.jsonFromData(params)
-			int timeToProcessParsing = ls.getMilisecondsExecutionTimeSince(timeBeforeParsing)
-			DateTime timeBeforeRequestMount = ic.getTime()
 			Request req = new Request(buildMetaForMethod("getPostByIdFromCache"), requestBody)
-			int timeToProcessRequestMount = ls.getMilisecondsExecutionTimeSince(timeBeforeRequestMount)
-			DateTime timeBeforeMethodCall = ic.getTime()
 			Response res = anycast(req)
-			int timeToProcessMethodCall = ls.getMilisecondsExecutionTimeSince(timeBeforeMethodCall)
 			if (res.content == "{}") return null
-			DateTime timeBeforeParseReturn = ic.getTime()
 			CachedPost response = je.jsonToData(res.content, typeof(CachedPost))
-			int timeToProcessReturnParsing = ls.getMilisecondsExecutionTimeSince(timeBeforeParseReturn)
-			logger.storeInfo("{\"timeToProcessParamPacking\": \"$(iu.makeString(timeToProcessParamPacking))\", \"timeToProcessParsing\": \"$(iu.makeString(timeToProcessParsing))\", \"timeToProcessRequestMount\": \"$(iu.makeString(timeToProcessRequestMount))\", \"timeToProcessMethodCall\": \"$(iu.makeString(timeToProcessMethodCall))\", \"timeToProcessReturnParsing\": \"$(iu.makeString(timeToProcessReturnParsing))\"}")
 			return response
 		}
 
 		Post[] CacheRepository:getCachedPosts() {
-			DateTime timeBeforeParamPacking = ic.getTime()
-			int timeToProcessParamPacking = ls.getMilisecondsExecutionTimeSince(timeBeforeParamPacking)
-			DateTime timeBeforeParsing = ic.getTime()
 			char requestBody[] = ""
-			int timeToProcessParsing = ls.getMilisecondsExecutionTimeSince(timeBeforeParsing)
-			DateTime timeBeforeRequestMount = ic.getTime()
 			Request req = new Request(buildMetaForMethod("getCachedPosts"), requestBody)
-			int timeToProcessRequestMount = ls.getMilisecondsExecutionTimeSince(timeBeforeRequestMount)
-			DateTime timeBeforeMethodCall = ic.getTime()
 			Response res = anycast(req)
-			int timeToProcessMethodCall = ls.getMilisecondsExecutionTimeSince(timeBeforeMethodCall)
 			if (res.content == "{}") return null
-			DateTime timeBeforeParseReturn = ic.getTime()
 			Post response[] = je.jsonToArray(res.content, typeof(Post[]))
-			int timeToProcessReturnParsing = ls.getMilisecondsExecutionTimeSince(timeBeforeParseReturn)
-			logger.storeInfo("{\"timeToProcessParamPacking\": \"$(iu.makeString(timeToProcessParamPacking))\", \"timeToProcessParsing\": \"$(iu.makeString(timeToProcessParsing))\", \"timeToProcessRequestMount\": \"$(iu.makeString(timeToProcessRequestMount))\", \"timeToProcessMethodCall\": \"$(iu.makeString(timeToProcessMethodCall))\", \"timeToProcessReturnParsing\": \"$(iu.makeString(timeToProcessReturnParsing))\"}")
 			return response
 		}
 
 		Post[] CacheRepository:getPosts() {
-			DateTime timeBeforeParamPacking = ic.getTime()
-			int timeToProcessParamPacking = ls.getMilisecondsExecutionTimeSince(timeBeforeParamPacking)
-			DateTime timeBeforeParsing = ic.getTime()
 			char requestBody[] = ""
-			int timeToProcessParsing = ls.getMilisecondsExecutionTimeSince(timeBeforeParsing)
-			DateTime timeBeforeRequestMount = ic.getTime()
 			Request req = new Request(buildMetaForMethod("getPosts"), requestBody)
-			int timeToProcessRequestMount = ls.getMilisecondsExecutionTimeSince(timeBeforeRequestMount)
-			DateTime timeBeforeMethodCall = ic.getTime()
 			Response res = anycast(req)
-			int timeToProcessMethodCall = ls.getMilisecondsExecutionTimeSince(timeBeforeMethodCall)
 			if (res.content == "{}") return null
-			DateTime timeBeforeParseReturn = ic.getTime()
 			Post response[] = je.jsonToArray(res.content, typeof(Post[]))
-			int timeToProcessReturnParsing = ls.getMilisecondsExecutionTimeSince(timeBeforeParseReturn)
-			logger.storeInfo("{\"timeToProcessParamPacking\": \"$(iu.makeString(timeToProcessParamPacking))\", \"timeToProcessParsing\": \"$(iu.makeString(timeToProcessParsing))\", \"timeToProcessRequestMount\": \"$(iu.makeString(timeToProcessRequestMount))\", \"timeToProcessMethodCall\": \"$(iu.makeString(timeToProcessMethodCall))\", \"timeToProcessReturnParsing\": \"$(iu.makeString(timeToProcessReturnParsing))\"}")
 			return response
 		}
 
 		void CacheRepository:clearState() {
-			DateTime timeBeforeParamPacking = ic.getTime()
-			int timeToProcessParamPacking = ls.getMilisecondsExecutionTimeSince(timeBeforeParamPacking)
-			DateTime timeBeforeParsing = ic.getTime()
 			char requestBody[] = ""
-			int timeToProcessParsing = ls.getMilisecondsExecutionTimeSince(timeBeforeParsing)
-			DateTime timeBeforeRequestMount = ic.getTime()
 			Request req = new Request(buildMetaForMethod("clearState"), requestBody)
-			int timeToProcessRequestMount = ls.getMilisecondsExecutionTimeSince(timeBeforeRequestMount)
-			DateTime timeBeforeMethodCall = ic.getTime()
 			nonBlockingBroadcastList(req)
-			int timeToProcessMethodCall = ls.getMilisecondsExecutionTimeSince(timeBeforeMethodCall)
-			DateTime timeBeforeParseReturn = ic.getTime()
-			int timeToProcessReturnParsing = ls.getMilisecondsExecutionTimeSince(timeBeforeParseReturn)
-			logger.storeInfo("{\"timeToProcessParamPacking\": \"$(iu.makeString(timeToProcessParamPacking))\", \"timeToProcessParsing\": \"$(iu.makeString(timeToProcessParsing))\", \"timeToProcessRequestMount\": \"$(iu.makeString(timeToProcessRequestMount))\", \"timeToProcessMethodCall\": \"$(iu.makeString(timeToProcessMethodCall))\", \"timeToProcessReturnParsing\": \"$(iu.makeString(timeToProcessReturnParsing))\"}")
 		}
 
 		Response anycast(Request r) {

@@ -81,8 +81,9 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
                 res = process(msg)
                 if (res != null) httpUtil.sendResponse(msg, res)
                 else httpUtil.sendResponse(msg, httpUtil.build404(msg))
+                client.disconect()
             }
-            else timer.sleep(1000)
+            else timer.sleep(1)
         }
     }
 

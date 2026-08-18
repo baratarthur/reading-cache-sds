@@ -4,7 +4,6 @@
         { "lib": "time.Timer", "alias": "timer" },
         { "lib": "libs.utils.PostsUtils", "alias": "pu" },
         { "lib": "libs.krabs.LatencyStore", "alias": "ls" },
-        { "lib": "time.Calendar", "alias": "ic" },
         { "lib": "data.IntUtil", "alias": "iu" },
         { "lib": "libs.utils.Logger", "alias": "logger" }
     ],

@@ -34,7 +34,7 @@ data ReqWrapper {
 }
 
 interface RPCUtil {
-    Response make(ReqWrapper req, DateTime timeBeforeAccessComponent)
+    Response make(ReqWrapper req)
     Request parseRequestFromString(char requestString[])
     bool sendData(TCPSocket s, char requestContent[])
     char[] receiveData(TCPSocket s)

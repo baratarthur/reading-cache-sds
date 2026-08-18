@@ -20,7 +20,6 @@ component provides libs.network.rpc.NonBlockRPC requires libs.network.rpc.RPCUti
     }
 
     void makeNonBlockingRequest(ReqWrapper w) {
-        DateTime timestampBeforeAccessComponent = ic.getTime()
-        acc = new Response[](acc, rpcUtil.make(w, timestampBeforeAccessComponent))
+        acc = new Response[](acc, rpcUtil.make(w))
     }
 }

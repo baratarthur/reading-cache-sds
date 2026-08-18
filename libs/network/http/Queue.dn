@@ -9,7 +9,11 @@ component provides Queue requires net.TCPSocket {
     TCPSocket Queue:service() {
         if(queue.arrayLength == 0) return null
         TCPSocket socket = queue[0]
-        mutex(lock) { queue = dana.sub(queue, 1, queue.arrayLength - 1) }
+        mutex(lock) {
+            TCPSocket newQueue[] = new TCPSocket[]()
+            for(int i = 1; i < queue.arrayLength; i++) newQueue = new TCPSocket[](newQueue, queue[i])
+            queue = newQueue
+        }
         return socket
     }
 

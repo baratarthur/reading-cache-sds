@@ -12,5 +12,5 @@ data Post {
 interface PostsRepository {
     void addPosts(store Post newPosts[])
     Post getPostById(store int postId)
-    Post[] getUserFeed(store int userId, int threadId)
+    Post[] getUserFeed(store int userId)
 }

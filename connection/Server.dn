@@ -12,7 +12,7 @@ data LatencyCheckDTO {
 component provides Server(Destructor) requires net.TCPSocket, net.TCPServerSocket, libs.utils.Logger logger, data.IntUtil iu, composition.Adapt adapter,
 composition.RecursiveLoader loader, repositories.posts.PostsRepository, repositories.cache.CacheRepository, libs.network.http.HTTPUtil httpUtil, data.StringUtil su,
 data.json.JSONEncoder je, data.json.JSONParser jsonParser, time.Calendar ic, libs.krabs.LatencyStore ls, libs.network.RemotesHandler, libs.adaptation.AdaptationLyfecicle,
-libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils.PostsUtils pu {
+libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils.PostsUtils pu, net.TCPMonitor {
     CacheRepository cacheRepo
     LoadedComponents repoComponents[] = new LoadedComponents[](
         loader.load("repositories/cache/CacheRepository.o"),
@@ -35,28 +35,38 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
 
     Mutex writingLock = new Mutex()
 
+    TCPMonitor monitor
+	Mutex monitorLock = new Mutex()
+
+
+	eventsink NetEvents(EventData ed) {
+		TCPSocket source = ed.source
+		monitor.armSendNotify(source)
+    }
+
     void Destructor:destroy() {
         serviceStatus = false
     }
     
     void Server:start(int PORT) {
-        TCPServerSocket host = new TCPServerSocket()
+        TCPServerSocket server = new TCPServerSocket()
 		serviceStatus = true
 
-		if (!host.bind(TCPServerSocket.ANY_ADDRESS, PORT)) {
-			logger.error("Error: failed to bind master socket")
-			return
-		}
-
+		if (!server.bind(TCPServerSocket.ANY_ADDRESS, PORT)) throw new Exception("failed to bind server socket")
+        
         initRepo()
+        monitor = new TCPMonitor()
+        for(int i = 0; i < 10; i++) asynch::handleRequest() // create 10 threads to process everything
 
 		logger.storeInfo("$debugMSG Server started on port $(iu.makeString(PORT))")
 		while (serviceStatus) {
 			TCPSocket client = new TCPSocket()
-			if (client.accept(host)) {
-                int tId = ms.getId()
-                ms.startProcess(tId)
-                asynch::handleRequest(client, tId)
+			if (client.accept(server)) {
+				client.setNonBlocking()
+                mutex(monitorLock) {
+					monitor.addSocket(client)
+					monitor.armSendNotify(client)
+				}
             }
 		}
     }
@@ -65,22 +75,39 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
         cacheRepo = new CacheRepository() from repoComponents[lastComponentIndex].mainComponent
     }
     
-    void Server:handleRequest(store TCPSocket s, store int threadId) {
-        HTTPMessage msg = httpUtil.readHTTPRequest(s)
-        HTTPResponse res = null
-        res = process(msg, threadId)
-        if (res != null) httpUtil.sendResponse(msg, res)
-        else httpUtil.sendResponse(msg, httpUtil.build404(msg))
-        ms.tickMetric(threadId, "executionEnd")
-        s.disconnect()
+    void Server:handleRequest() {
+        while(true) {
+			MonitorEvent events[] = monitor.wait()
+            
+            if (events.arrayLength == 0) timer.sleep(1)
+			else {
+                for (int i = 0; i < events.arrayLength; i++) {
+					if (events[i].recvReady) {
+                        HTTPMessage msg = httpUtil.readHTTPRequest(events[i].socket)
+                        HTTPResponse res = null
+                        res = process(msg)
+                        if (res != null) httpUtil.sendResponse(msg, res)
+                        else httpUtil.sendResponse(msg, httpUtil.build404(msg))
+                        events[i].socket.disconnect()
+                    }
+						
+					if (events[i].close) {
+						mutex(monitorLock) {
+							monitor.remSocket(events[i].socket)
+							events[i].socket.disconnect()
+                        }
+                    }
+                }
+            }
+        }
     }
 
-    HTTPResponse process(HTTPMessage req, store int threadId) {
+    HTTPResponse process(HTTPMessage req) {
         HTTPResponse res = null
         DateTime startExecutionTime = ic.getTime()
 
-        if(req.command == "GET") res = processGetRequests(req, threadId)
-        else if (req.command == "POST") res = processPostRequests(req, threadId)
+        if(req.command == "GET") res = processGetRequests(req)
+        else if (req.command == "POST") res = processPostRequests(req)
 
         int executionTimeInMs = ls.getMilisecondsExecutionTimeSince(startExecutionTime)
         ls.storeExecutionTime(executionTimeInMs, req)
@@ -88,13 +115,13 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
         return res
     }
 
-    HTTPResponse processGetRequests(HTTPMessage req, store int threadId) {
+    HTTPResponse processGetRequests(HTTPMessage req) {
       
         if (req.resource == "/") return getHello(req)
         else if (req.resource == "/end") return getEnd(req)
-        else if (req.resource == "/all") return getAll(req, threadId)
-        else if (su.startsWith(req.resource, "/feed/")) return getFeed(req, threadId)
-        else if (su.startsWith(req.resource, "/post/")) return getPostById(req, threadId)
+        else if (req.resource == "/all") return getAll(req)
+        else if (su.startsWith(req.resource, "/feed/")) return getFeed(req)
+        else if (su.startsWith(req.resource, "/post/")) return getPostById(req)
         else if (req.resource == "/current-latency") return getCurrentRequestTime(req)
 
         return null
@@ -117,53 +144,45 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
         return httpUtil.build200(req, responseContent)
     }
 
-    HTTPResponse getAll(HTTPMessage req, int threadId) {
+    HTTPResponse getAll(HTTPMessage req) {
         // int page = httpUtil.getQueryStringValue(req.queryString, "page").string.intFromString()
         // int pageSize = httpUtil.getQueryStringValue(req.queryString, "pageSize").string.intFromString()
-        ms.tickMetric(threadId, "cacheLookupTime")
         Post allPosts[] = cacheRepo.getPosts()
-        ms.tickMetric(threadId, "cacheLookupEndTime")
         char responseContent[] = je.jsonFromArray(allPosts)
         return httpUtil.build200(req, responseContent)
     }
 
-    HTTPResponse getFeed(HTTPMessage req, int threadId) {
+    HTTPResponse getFeed(HTTPMessage req) {
         PostsRepository repo = new PostsRepository()
         String pathInfo[] = su.explode(req.resource, "/") // expected: ["feed", "<userId:number>"]
         int userId = pathInfo[1].string.intFromString()
         
         Post userPosts[]
-        ms.tickMetric(threadId, "cacheLookupTime")
         Post cachedPosts[] = cacheRepo.getCachedPosts()
-        ms.tickMetric(threadId, "cacheLookupEndTime")
         
         if(cachedPosts.arrayLength > 4) {
             ms.hitCache()
             userPosts = pu.getFeedFromCached(cachedPosts)
         } else {
             ms.missCache()
-            userPosts = repo.getUserFeed(userId, threadId)
+            userPosts = repo.getUserFeed(userId)
         }
 
         char responseContent[] = je.jsonFromArray(userPosts)
         return httpUtil.build200(req, responseContent)
     }
 
-    HTTPResponse getPostById(HTTPMessage req, int threadId) {
+    HTTPResponse getPostById(HTTPMessage req) {
         PostsRepository repo = new PostsRepository()
         String pathInfo[] = su.explode(req.resource, "/") // expected: ["post", "<postId:number>"]
         int postId = pathInfo[1].string.intFromString()
         
-        ms.tickMetric(threadId, "cacheLookupTime")
         CachedPost cachedPost = cacheRepo.getPostByIdFromCache(postId) // stateful
-        ms.tickMetric(threadId, "cacheLookupEndTime")
         
         if(cachedPost.isInCache) ms.hitCache()
         else {
             ms.missCache()
-            ms.tickMetric(threadId, "cacheUpdateStartTime")
             cacheRepo.addPostInCache(cachedPost.post) // stateful
-            ms.tickMetric(threadId, "cacheUpdateEndTime")
         }
         
         char responseContent[] = je.jsonFromData(cachedPost.post)
@@ -179,22 +198,20 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
     }
 
 
-    HTTPResponse processPostRequests(HTTPMessage req, store int threadId) {
+    HTTPResponse processPostRequests(HTTPMessage req) {
 
-        if (req.resource == "/post") return postAddPost(req, threadId)
+        if (req.resource == "/post") return postAddPost(req)
         else if (su.startsWith(req.resource, "/adapt/")) return postAdapt(req)
 
         return null
     }
 
-    HTTPResponse postAddPost(HTTPMessage req, int threadId) {
+    HTTPResponse postAddPost(HTTPMessage req) {
         char body[] = new char[](req.postData)
         CreatePostDTO createPostDTO = je.jsonToData(body, typeof(CreatePostDTO))
         
         Post newPost = new Post(0, createPostDTO.userId, 0, createPostDTO.content, new DateTime())
-        ms.tickMetric(threadId, "cacheUpdateStartTime")
         mutex(writingLock) { cacheRepo.addNewPostInCache(newPost) }
-        ms.tickMetric(threadId, "cacheUpdateEndTime")
         
         return httpUtil.build201(req, "Success")
     }

@@ -29,10 +29,10 @@ libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je, 
         return null
     }
 
-    Post[] PostsRepository:getUserFeed(store int userId, int threadId) {
+    Post[] PostsRepository:getUserFeed(store int userId) {
         char query[] = "SELECT id, userId, likes, content, created_at FROM posts WHERE userId <> $(iu.makeString(userId)) ORDER BY created_at DESC LIMIT $(iu.makeString(PAGINATION_SIZE));"
                 
-        MySQLRow result[] = execQuery(query, threadId)
+        MySQLRow result[] = execQuery(query, 0)
         Post userPosts[] = new Post[]()
 
         if (result.arrayLength > 0) {

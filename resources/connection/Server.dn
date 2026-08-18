@@ -3,5 +3,5 @@ uses libs.krabs.MetricsStore
 
 interface Server {
     void start(int PORT)
-    void handleRequest(store TCPSocket s, store int threadId)
+    void handleRequest()
 }

@@ -35,15 +35,6 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
 
     Mutex writingLock = new Mutex()
 
-    TCPMonitor monitor
-	Mutex monitorLock = new Mutex()
-
-
-	eventsink NetEvents(EventData ed) {
-		TCPSocket source = ed.source
-		monitor.armSendNotify(source)
-    }
-
     void Destructor:destroy() {
         serviceStatus = false
     }
@@ -55,8 +46,6 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
 		if (!server.bind(TCPServerSocket.ANY_ADDRESS, PORT)) throw new Exception("failed to bind server socket")
         
         initRepo()
-        monitor = new TCPMonitor()
-        asynch::handleData()
         for(int i = 0; i < 10; i++) {
             processingQueues[i] = new Queue()
             asynch::handleRequest(i) // create 10 threads to process everything
@@ -65,13 +54,7 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
 		logger.storeInfo("$debugMSG Server started on port $(iu.makeString(PORT))")
 		while (serviceStatus) {
 			TCPSocket client = new TCPSocket()
-			if (client.accept(server)) {
-				client.setNonBlocking()
-                mutex(monitorLock) {
-					monitor.addSocket(client)
-					monitor.armSendNotify(client)
-				}
-            }
+			if (client.accept(server)) handleData(client)
 		}
     }
 
@@ -83,34 +66,16 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
     Queue processingQueues[] = new Queue[10]
     int queueRobbinPointer = 0
 
-    void handleData() {
-        while(true) {
-			MonitorEvent events[] = monitor.wait()
-            
-            if (events.arrayLength == 0) timer.sleep(1)
-			else {
-                for (int i = 0; i < events.arrayLength; i++) {
-					if (events[i].recvReady) {
-                        int j = queueRobbinPointer++ % 10
-                        HTTPMessage msg = httpUtil.readHTTPRequest(events[i].socket)
-                        processingQueues[j].add(msg)
-                    }
-						
-					if (events[i].close) {
-						mutex(monitorLock) {
-							monitor.remSocket(events[i].socket)
-							events[i].socket.disconnect()
-                        }
-                    }
-                }
-            }
-        }
+    void handleData(TCPSocket client) {
+        int j = queueRobbinPointer++ % 10
+        processingQueues[j].add(client)
     }
     
     void Server:handleRequest(int queueIndex) {
         while(serviceStatus) {
             if(processingQueues[queueIndex].getLength() > 0) {
-                HTTPMessage msg = processingQueues[queueIndex].service()
+                TCPSocket client = processingQueues[queueIndex].service()
+                HTTPMessage msg = httpUtil.readHTTPRequest(client)
                 logger.storeInfo("Message received to be processed")
                 HTTPResponse res = null
                 res = process(msg)

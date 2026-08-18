@@ -1,29 +1,23 @@
 const char debugMSG[] = "[@HTTPUtil]"
 
 component provides libs.network.http.HTTPUtil requires data.IntUtil iu, io.FileSystem fileSystem, 
-	data.StringUtil stringUtil, libs.utils.Logger logger , data.json.JSONEncoder je {
+	data.StringUtil stringUtil {
     
     HTTPMessage HTTPUtil:readHeader(store TCPSocket s) {
         HTTPMessage httpHeader = null
         char buff[]
+        int len = 0
         char command[] = null
-		int maxRounds = 0
-        while(true) {
-			buff = s.recv(20)
+        while ((buff = s.recv(1)).arrayLength > 0) {
             command = new char[](command, buff)
-			int lastCharIndex = command.arrayLength - 1
-			int endOfHeaderStartIndex = command.arrayLength - 5
-			logger.storeInfo("buffer $(buff == null)")
-			if(maxRounds > 30) break
-            if(command.arrayLength >= 4 && dana.sub(command, endOfHeaderStartIndex, lastCharIndex) == "\\r\\n\\r\\n"
-                // (command[command.arrayLength-4] == "\r") && (command[command.arrayLength-3] == "\n") && 
-				// (command[command.arrayLength-2] == "\r") && (command[command.arrayLength-1] == "\n")
-			) {
+            len++
+            if(len >= 4 &&
+                (command[len-4] == "\r") && (command[len-3] == "\n") && 
+				(command[len-2] == "\r") && (command[len-1] == "\n")) {
                 httpHeader = parseHTTPRequest(command)
                 if (httpHeader != null) { httpHeader.rawHeader = command }
                 break
             }
-			maxRounds++
         }
         if (httpHeader == null) { s.disconnect() }
         else { httpHeader.socket = s }
@@ -72,7 +66,6 @@ component provides libs.network.http.HTTPUtil requires data.IntUtil iu, io.FileS
 
     HTTPMessage HTTPUtil:readHTTPRequest(store TCPSocket s) {
 		HTTPMessage httpHeader = readHeader(s)
-		// logger.storeInfo("JSON from Data:")
 		return getMessage(httpHeader)
 	}
 
@@ -263,7 +256,6 @@ component provides libs.network.http.HTTPUtil requires data.IntUtil iu, io.FileS
 		request.socket.send(response.body)
         // logger.info(response.body)
         // logger.info("$debugMSG - END RESPONSE CONTENT")
-		request.socket.disconnect()
     }
 
 }

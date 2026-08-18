@@ -3,5 +3,5 @@ uses libs.krabs.MetricsStore
 
 interface Server {
     void start(int PORT)
-    void handleRequest()
+    void handleRequest(int queueIndex)
 }

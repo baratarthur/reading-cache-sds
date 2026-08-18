@@ -1,5 +1,5 @@
 interface DatabaseConfig {
-    const char host[] = "172.29.1.27"
+    const char host[] = "127.0.0.1" // 172.29.1.27
     const int port = 30306
     const char user[] = "user_dana"
     const char password[] = "123456"

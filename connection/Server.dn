@@ -12,7 +12,7 @@ data LatencyCheckDTO {
 component provides Server(Destructor) requires net.TCPSocket, net.TCPServerSocket, libs.utils.Logger logger, data.IntUtil iu, composition.Adapt adapter,
 composition.RecursiveLoader loader, repositories.posts.PostsRepository, repositories.cache.CacheRepository, libs.network.http.HTTPUtil httpUtil, data.StringUtil su,
 data.json.JSONEncoder je, data.json.JSONParser jsonParser, time.Calendar ic, libs.krabs.LatencyStore ls, libs.network.RemotesHandler, libs.adaptation.AdaptationLyfecicle,
-libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils.PostsUtils pu, net.TCPMonitor {
+libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils.PostsUtils pu, net.TCPMonitor, data.adt.Queue {
     CacheRepository cacheRepo
     LoadedComponents repoComponents[] = new LoadedComponents[](
         loader.load("repositories/cache/CacheRepository.o"),
@@ -56,7 +56,11 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
         
         initRepo()
         monitor = new TCPMonitor()
-        for(int i = 0; i < 10; i++) asynch::handleRequest() // create 10 threads to process everything
+        asynch::handleData()
+        for(int i = 0; i < 10; i++) {
+            processingQueues[i] = new Queue()
+            asynch::handleRequest(i) // create 10 threads to process everything
+        }
 
 		logger.storeInfo("$debugMSG Server started on port $(iu.makeString(PORT))")
 		while (serviceStatus) {
@@ -74,8 +78,12 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
     void initRepo() {
         cacheRepo = new CacheRepository() from repoComponents[lastComponentIndex].mainComponent
     }
-    
-    void Server:handleRequest() {
+
+
+    Queue processingQueues[] = new Queue[10]
+    int queueRobbinPointer = 0
+
+    void handleData() {
         while(true) {
 			MonitorEvent events[] = monitor.wait()
             
@@ -83,12 +91,9 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
 			else {
                 for (int i = 0; i < events.arrayLength; i++) {
 					if (events[i].recvReady) {
+                        int j = queueRobbinPointer++ % 10
                         HTTPMessage msg = httpUtil.readHTTPRequest(events[i].socket)
-                        HTTPResponse res = null
-                        res = process(msg)
-                        if (res != null) httpUtil.sendResponse(msg, res)
-                        else httpUtil.sendResponse(msg, httpUtil.build404(msg))
-                        events[i].socket.disconnect()
+                        processingQueues[j].add(msg)
                     }
 						
 					if (events[i].close) {
@@ -99,6 +104,20 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
                     }
                 }
             }
+        }
+    }
+    
+    void Server:handleRequest(int queueIndex) {
+        while(serviceStatus) {
+            if(processingQueues[queueIndex].getLength() > 0) {
+                HTTPMessage msg = processingQueues[queueIndex].service()
+                logger.storeInfo("Message received to be processed")
+                HTTPResponse res = null
+                res = process(msg)
+                if (res != null) httpUtil.sendResponse(msg, res)
+                else httpUtil.sendResponse(msg, httpUtil.build404(msg))
+            }
+            else timer.sleep(1000)
         }
     }
 

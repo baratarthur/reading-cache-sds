@@ -1,0 +1,8 @@
+uses net.TCPSocket
+
+interface Queue {
+    void add(store TCPSocket s)
+    TCPSocket service()
+    TCPSocket next()
+    int getLength()
+}

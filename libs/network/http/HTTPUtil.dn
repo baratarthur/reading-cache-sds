@@ -238,6 +238,17 @@ component provides libs.network.http.HTTPUtil requires data.IntUtil iu, io.FileS
             ""
         )
     }
+
+	HTTPResponse HTTPUtil:build500(HTTPMessage request) {
+        return new HTTPResponse(
+            500,
+            "Internal Server Error",
+            HTTPUtil.SERVER_NAME,
+            0,
+            request.mimeType,
+            "server overload"
+        )
+    }
     
     void HTTPUtil:sendResponse(HTTPMessage request, HTTPResponse response) {
         // logger.info("$debugMSG - RESPONSE CONTENT")

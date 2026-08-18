@@ -54,6 +54,7 @@ interface HTTPUtil {
 	HTTPMessage parseHTTPRequest(char buf[])
 	String getQueryStringValue(char resource[], char paramSearch[])
 	void sendResponse(HTTPMessage request, HTTPResponse response)
+	HTTPResponse build500(HTTPMessage request)
 	HTTPResponse build404(HTTPMessage request)
 	HTTPResponse build201(HTTPMessage request, char body[])
 	HTTPResponse build200(HTTPMessage request, char body[])

@@ -12,7 +12,7 @@ data LatencyCheckDTO {
 component provides Server(Destructor) requires net.TCPSocket, net.TCPServerSocket, libs.utils.Logger logger, data.IntUtil iu, composition.Adapt adapter,
 composition.RecursiveLoader loader, repositories.posts.PostsRepository, repositories.cache.CacheRepository, libs.network.http.HTTPUtil httpUtil, data.StringUtil su,
 data.json.JSONEncoder je, data.json.JSONParser jsonParser, time.Calendar ic, libs.krabs.LatencyStore ls, libs.network.RemotesHandler, libs.adaptation.AdaptationLyfecicle,
-libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils.PostsUtils pu, net.TCPMonitor, libs.network.http.Queue {
+libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils.PostsUtils pu, net.TCPMonitor, libs.network.http.Queue, libs.utils.Constants {
     CacheRepository cacheRepo
     LoadedComponents repoComponents[] = new LoadedComponents[](
         loader.load("repositories/cache/CacheRepository.o"),
@@ -46,7 +46,7 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
 		if (!server.bind(TCPServerSocket.ANY_ADDRESS, PORT)) throw new Exception("failed to bind server socket")
         
         initRepo()
-        for(int i = 0; i < 10; i++) {
+        for(int i = 0; i < Constants.CONNECTION_POOL_SIZE; i++) {
             processingQueues[i] = new Queue()
             asynch::handleRequest(i) // create 10 threads to process everything
         }
@@ -63,12 +63,16 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
     }
 
 
-    Queue processingQueues[] = new Queue[10]
+    Queue processingQueues[] = new Queue[Constants.CONNECTION_POOL_SIZE]
     int queueRobbinPointer = 0
 
     void handleData(TCPSocket client) {
-        int i = queueRobbinPointer++ % 10
-        processingQueues[i].add(client)
+        int i = queueRobbinPointer++ % Constants.CONNECTION_POOL_SIZE
+        if(processingQueues[i].getLength() > 50) {
+            HTTPMessage msg = httpUtil.readHTTPRequest(client)
+            httpUtil.sendResponse(msg, httpUtil.build500(msg))
+            client.disconnect()
+        } else processingQueues[i].add(client)
     }
     
     void Server:handleRequest(int queueIndex) {
@@ -76,7 +80,6 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
             if(processingQueues[queueIndex].getLength() > 0) {
                 TCPSocket client = processingQueues[queueIndex].service()
                 HTTPMessage msg = httpUtil.readHTTPRequest(client)
-                logger.storeInfo("Message received to be processed")
                 HTTPResponse res = null
                 res = process(msg)
                 if (res != null) httpUtil.sendResponse(msg, res)

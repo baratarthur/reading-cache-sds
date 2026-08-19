@@ -146,8 +146,9 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
         int start = httpUtil.getQueryStringValue(req.queryString, "start").string.intFromString()
         int amount = httpUtil.getQueryStringValue(req.queryString, "amount").string.intFromString()
         Post allPosts[] = postsRepo.getPosts(start, amount)
-        char responseContent[] = je.jsonFromArray(allPosts)
-        return httpUtil.build200(req, responseContent)
+        cacheRepo.setPosts(allPosts)
+        logger.storeInfo("Cache loaded")
+        return httpUtil.build200(req, "Success!\n")
     }
 
     HTTPResponse getFeed(HTTPMessage req) {

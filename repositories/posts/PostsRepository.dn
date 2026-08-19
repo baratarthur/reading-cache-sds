@@ -45,9 +45,9 @@ libs.utils.Logger logger, libs.krabs.LatencyStore ls, data.json.JSONEncoder je, 
         return userPosts
     }
 
-    Post[] PostsRepository:getPosts(int start, int amount) {
-        char query[] = "SELECT id, userId, likes, content, created_at FROM posts ORDER BY id ASC LIMIT $(iu.makeString(amount)) OFFSET $(iu.makeString(amount));"
-                
+    Post[] PostsRepository:getPosts(char start[], char amount[]) {
+        char query[] = "SELECT id, userId, likes, content, created_at FROM posts ORDER BY id ASC LIMIT $amount OFFSET $start;"
+
         MySQLRow result[] = execQuery(query, 0)
         Post userPosts[] = new Post[]()
 

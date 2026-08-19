@@ -143,8 +143,8 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
 
     HTTPResponse loadCache(HTTPMessage req) {
         PostsRepository postsRepo = new PostsRepository()
-        int start = httpUtil.getQueryStringValue(req.queryString, "start").string.intFromString()
-        int amount = httpUtil.getQueryStringValue(req.queryString, "amount").string.intFromString()
+        char start[] = httpUtil.getQueryStringValue(req.queryString, "start").string
+        char amount[] = httpUtil.getQueryStringValue(req.queryString, "amount").string
         Post allPosts[] = postsRepo.getPosts(start, amount)
         cacheRepo.setPosts(allPosts)
         logger.storeInfo("Cache loaded $(iu.makeString(allPosts.arrayLength)) posts")

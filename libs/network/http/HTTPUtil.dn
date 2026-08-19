@@ -197,9 +197,7 @@ component provides libs.network.http.HTTPUtil requires data.IntUtil iu, io.FileS
 			String param[] = stringUtil.explode(helper[i].string, "=")
 			char paramName[] = param[0].string
 			char paramValue[] = param[1].string
-			if (paramName == paramSearch) {
-				return new String(paramValue)
-			}
+			if (paramName == paramSearch) return new String(paramValue)
 		}
 		return new String("")
 	}

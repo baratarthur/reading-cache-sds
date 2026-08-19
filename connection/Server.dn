@@ -147,7 +147,7 @@ libs.krabs.MetricsStore ms, time.TimeUnix timeUnix, time.Timer timer, libs.utils
         int amount = httpUtil.getQueryStringValue(req.queryString, "amount").string.intFromString()
         Post allPosts[] = postsRepo.getPosts(start, amount)
         cacheRepo.setPosts(allPosts)
-        logger.storeInfo("Cache loaded")
+        logger.storeInfo("Cache loaded $(iu.makeString(allPosts.arrayLength)) posts")
         return httpUtil.build200(req, "Success!\n")
     }
 

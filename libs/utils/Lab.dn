@@ -1,0 +1,13 @@
+component provides libs.utils.Lab requires repositories.posts.PostsRepository, util.Random random {
+    Post[] Lab:shuffle(Post state[]) {
+        Post[] newInRandomOrder[] =[] state
+        random.setSeed(42)
+        for() {
+            
+        }
+    }
+
+    Post[] Lab:bubbleSort(Post state[]) {
+
+    }
+}

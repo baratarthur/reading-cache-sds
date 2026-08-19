@@ -1,0 +1,6 @@
+uses repositories.posts.PostsRepository
+
+interface Lab {
+    Post[] shuffle(Post state[])
+    Post[] bubbleSort(Post state[])
+}

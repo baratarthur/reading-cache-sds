@@ -1,13 +1,37 @@
 component provides libs.utils.Lab requires repositories.posts.PostsRepository, util.Random random {
     Post[] Lab:shuffle(Post state[]) {
-        Post[] newInRandomOrder[] =[] state
+        Post newStateInRandomOrder[] =[] state
+        int stateSize = newStateInRandomOrder.arrayLength
         random.setSeed(42)
-        for() {
-            
+
+        for(int i = 0; i < stateSize; i++) {
+            int randomTargetIndex = random.getInt(stateSize)
+            switch(newStateInRandomOrder, i, randomTargetIndex)
+            // Post aux = newStateInRandomOrder[randomTargetIndex]
+            // newStateInRandomOrder[randomTargetIndex] = newStateInRandomOrder[i]
+            // newStateInRandomOrder[i] = aux
         }
+
+        return newStateInRandomOrder
     }
 
     Post[] Lab:bubbleSort(Post state[]) {
+        Post newStateInOrderById[] =[] state
+        int stateSize = newStateInOrderById.arrayLength
+        for(int i = 0; i < stateSize; i++) {
+            for(int j = 0; j < (stateSize - i); j++) {
+                if(newStateInOrderById[j].id > newStateInOrderById[i].id) {
+                    switch(newStateInOrderById, i, j)
+                }
+            }
+        }
 
+        return newStateInOrderById
+    }
+
+    void switch(Post array[], int index1, int index2) {
+        Post aux = array[index2]
+        array[index2] = array[index1]
+        array[index1] = aux
     }
 }
